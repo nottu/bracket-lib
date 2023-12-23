@@ -98,7 +98,7 @@ impl ConsoleFrontEnd for SparseConsole {
     }
 
     fn at(&self, x: i32, y: i32) -> usize {
-        if let Ok(pos) = (((self.height as i32 - 1 - y) * self.width as i32) + x).try_into() {
+        if let Ok(pos) = (((self.height - 1 - y) * self.width ) + x).try_into() {
             pos
         } else {
             0
@@ -163,7 +163,7 @@ impl ConsoleFrontEnd for SparseConsole {
 
     fn print_centered(&mut self, y: i32, text: &str) {
         self.print(
-            (self.width as i32 / 2) - (text.to_string().len() as i32 / 2),
+            (self.width / 2) - (text.to_string().len() as i32 / 2),
             y,
             text,
         );
@@ -175,7 +175,7 @@ impl ConsoleFrontEnd for SparseConsole {
 
     fn print_color_centered(&mut self, y: i32, fg: RGBA, bg: RGBA, text: &str) {
         self.print_color(
-            (self.width as i32 / 2) - (text.to_string().len() as i32 / 2),
+            (self.width / 2) - (text.to_string().len() as i32 / 2),
             y,
             text,
             fg,

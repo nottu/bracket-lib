@@ -2,10 +2,7 @@ use bracket_random::prelude::*;
 
 fn main() {
     let mut rng = RandomNumberGenerator::new();
-    let mut rolls: Vec<i32> = Vec::new();
-    for _ in 0..=18 {
-        rolls.push(0);
-    }
+    let mut rolls: Vec<i32> = vec![0; 19];
 
     const N_ROLLS: i32 = 200000;
 
@@ -18,12 +15,11 @@ fn main() {
     let max = rolls.iter().max().unwrap();
     let scale = 70.0 / *max as f32;
 
-    for i in 3..=18 {
-        //println!("{:02} was rolled {} times.", i, rolls[i]);
+    for (i, roll) in rolls.into_iter().enumerate().take(18).skip(3) {
         print!("{:02} : ", i);
-        for _ in 0..(rolls[i] as f32 * scale) as i32 {
+        for _ in 0..(roll as f32 * scale) as i32 {
             print!("#");
         }
-        println!("");
+        println!();
     }
 }

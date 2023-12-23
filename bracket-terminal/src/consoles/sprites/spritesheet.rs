@@ -2,7 +2,7 @@ use crate::prelude::{Font, Sprite};
 use bracket_geometry::prelude::Rect;
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SpriteSheet {
     pub filename: String,
     pub sprites: Vec<Sprite>,

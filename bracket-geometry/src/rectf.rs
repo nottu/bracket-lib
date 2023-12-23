@@ -29,6 +29,7 @@ impl Default for RectF {
 
 impl RectF {
     /// Create a new rectangle, specifying X/Y Width/Height
+    #[allow(clippy::missing_panics_doc)]
     pub fn with_size<T>(x: T, y: T, w: T, h: T) -> RectF
     where
         T: TryInto<f32>,
@@ -44,6 +45,7 @@ impl RectF {
     }
 
     /// Create a new rectangle, specifying exact dimensions
+    #[allow(clippy::missing_panics_doc)]
     pub fn with_exact<T>(x1: T, y1: T, x2: T, y2: T) -> RectF
     where
         T: TryInto<f32>,

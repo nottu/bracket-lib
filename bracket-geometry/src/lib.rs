@@ -4,7 +4,7 @@
 //! This crate is part of the `bracket-lib` family.
 //!
 //! It provides point (2D and 3D), rectangle, line and circle plotting functionality.
-//! It uses UltraViolet behind the scenes for very fast calculations. If you enable the
+//! It uses `UltraViolet` behind the scenes for very fast calculations. If you enable the
 //! `serde` feature flag, it implements serialization/deserialization of the primitive types.
 //!
 //! For example:

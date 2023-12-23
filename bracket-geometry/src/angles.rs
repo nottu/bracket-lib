@@ -1,7 +1,8 @@
 use crate::prelude::{Point, Radians};
 
-/// From a given start point, project forward radius units at an angle of angle_radians degrees.
+/// From a given start point, project forward radius units at an angle of `angle_radians` degrees.
 /// 0 Degrees is north (negative Y), 90 degrees is east (positive X)
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 pub fn project_angle<ANGLE>(start: Point, radius: f32, angle_radians: ANGLE) -> Point
 where
     ANGLE: Into<Radians>,

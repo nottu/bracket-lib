@@ -9,7 +9,6 @@ pub use map::*;
 mod player;
 pub use player::*;
 mod rect;
-pub use rect::*;
 
 fn main() {
     App::new()

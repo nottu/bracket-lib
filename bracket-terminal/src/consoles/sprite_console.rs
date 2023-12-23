@@ -4,6 +4,7 @@ use bracket_geometry::prelude::Rect;
 use std::any::Any;
 
 /// Internal storage structure for sparse tiles.
+#[derive(Debug)]
 pub struct RenderSprite {
     pub destination: Rect,
     pub z_order: i32,
@@ -13,6 +14,7 @@ pub struct RenderSprite {
 
 /// A sparse console. Rather than storing every cell on the screen, it stores just cells that have
 /// data.
+#[derive(Debug)]
 pub struct SpriteConsole {
     pub width: u32,
     pub height: u32,

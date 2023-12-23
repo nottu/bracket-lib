@@ -30,6 +30,7 @@ impl Default for Rect {
 
 impl Rect {
     /// Create a new rectangle, specifying X/Y Width/Height
+    #[allow(clippy::missing_panics_doc)]
     pub fn with_size<T>(x: T, y: T, w: T, h: T) -> Rect
     where
         T: TryInto<i32>,
@@ -45,6 +46,7 @@ impl Rect {
     }
 
     /// Create a new rectangle, specifying exact dimensions
+    #[allow(clippy::missing_panics_doc)]
     pub fn with_exact<T>(x1: T, y1: T, x2: T, y2: T) -> Rect
     where
         T: TryInto<i32>,
@@ -58,6 +60,7 @@ impl Rect {
     }
 
     /// Creates a zero rectangle
+    #[must_use]
     pub fn zero() -> Rect {
         Rect {
             x1: 0,

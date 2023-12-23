@@ -4,7 +4,7 @@ use bracket_color::prelude::RGB;
 use bracket_embedding::prelude::EMBED;
 use glow::HasContext;
 
-#[derive(PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 /// BTerm's representation of a font or tileset file.
 pub struct Font {
     pub bitmap_file: String,

@@ -33,21 +33,17 @@ impl GameState for Demo {
             ctx.cls();
             ctx.print_centered(0, "Sparse console");
         }
+        if let Some(VirtualKeyCode::Space) = ctx.key {
+            if self.show_outer_console {
+                ctx.set_active_console(1);
+                ctx.cls();
 
-        match ctx.key {
-            Some(VirtualKeyCode::Space) => {
-                if self.show_outer_console {
-                    ctx.set_active_console(1);
-                    ctx.cls();
-
-                    if USE_WORKAROUND {
-                        let transparent = RGBA::from_f32(0., 0., 0., 0.);
-                        ctx.set(40, 0, transparent, transparent, ' ' as u16);
-                    }
+                if USE_WORKAROUND {
+                    let transparent = RGBA::from_f32(0., 0., 0., 0.);
+                    ctx.set(40, 0, transparent, transparent, ' ' as u16);
                 }
-                self.show_outer_console = !self.show_outer_console
             }
-            _ => (),
+            self.show_outer_console = !self.show_outer_console
         }
     }
 }

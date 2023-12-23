@@ -65,7 +65,6 @@ pub(crate) trait ConsoleFrontEnd: Sync + Send {
 
     fn in_bounds(&self, x: i32, y: i32) -> bool {
         let bounds = self.get_char_size();
-        let bounds = (bounds.0 as i32, bounds.1 as i32);
         if let Some(clip) = self.get_clipping() {
             clip.point_in_rect(Point::new(x, y)) && x < bounds.0 && y < bounds.1
         } else {

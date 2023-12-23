@@ -7,6 +7,7 @@ use bracket_geometry::prelude::Rect;
 use std::any::Any;
 
 /// A simple console with background color.
+#[derive(Debug)]
 pub struct SimpleConsole {
     pub width: u32,
     pub height: u32,

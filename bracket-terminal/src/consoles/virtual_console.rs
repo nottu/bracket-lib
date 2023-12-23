@@ -8,7 +8,7 @@ use crate::prelude::{
 use bracket_color::prelude::*;
 use bracket_geometry::prelude::{Point, Rect};
 use std::any::Any;
-
+#[derive(Debug)]
 pub struct VirtualConsole {
     pub width: u32,
     pub height: u32,

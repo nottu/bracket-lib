@@ -3,6 +3,7 @@ use std::ops;
 use ultraviolet::Vec2;
 
 /// A 2D floating-point position.
+#[allow(clippy::module_name_repetitions)]
 pub type PointF = Vec2;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -47,6 +48,7 @@ impl Point {
 
     /// Create a zero point
     #[inline]
+    #[must_use]
     pub fn zero() -> Self {
         Point { x: 0, y: 0 }
     }
@@ -60,10 +62,11 @@ impl Point {
         Point::new(t.0, t.1)
     }
 
-    #[inline]
     /// Helper for map index conversion
+    #[inline]
     #[must_use]
-    pub fn to_index<T>(self, width: T) -> usize
+    #[allow(clippy::missing_panics_doc)]
+    pub fn try_to_index<T>(self, width: T) -> usize
     where
         T: TryInto<usize>,
     {
@@ -80,9 +83,9 @@ impl Point {
     }
 
     /// Converts the point to a usize tuple
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This can panic if X or Y are not convertible to a `usize`.
     #[must_use]
     pub fn to_unsigned_tuple(self) -> (usize, usize) {
@@ -91,32 +94,20 @@ impl Point {
             self.y.try_into().ok().unwrap(),
         )
     }
+}
 
-    /// Converts the point to an UltraViolet vec2
-    #[must_use]
-    pub fn to_vec2(self) -> Vec2 {
-        Vec2::new(self.x as f32, self.y as f32)
-    }
-
-    /*
-    // This doesn't seem to exist anymore?
-    /// Converts the point to an UltraViolet vec2i
-    pub fn to_vec2i(self) -> Vec2i {
-        Vec2i::new(self.x, self.y)
-    }
-    */
-
-    /// Creates a point from an `UltraViolet` vec2
-    pub fn from_vec2(v: Vec2) -> Self {
+#[allow(clippy::cast_possible_truncation)]
+impl From<ultraviolet::vec::Vec2> for Point {
+    fn from(v: ultraviolet::vec::Vec2) -> Self {
         Self::new(v.x as i32, v.y as i32)
     }
+}
 
-    /*
-    /// Creates a point from an `UltraViolet` vec2i
-    pub fn from_vec2i(v: Vec2i) -> Self {
-        Self::new(v.x, v.y)
+#[allow(clippy::cast_precision_loss)]
+impl From<Point> for ultraviolet::vec::Vec2 {
+    fn from(point: Point) -> Self {
+        Self::new(point.x as f32, point.y as f32)
     }
-    */
 }
 
 impl From<(i32, i32)> for Point {
@@ -128,6 +119,7 @@ impl From<(i32, i32)> for Point {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)]
 impl From<(f32, f32)> for Point {
     fn from(item: (f32, f32)) -> Self {
         Self {
@@ -136,26 +128,6 @@ impl From<(f32, f32)> for Point {
         }
     }
 }
-
-impl From<Vec2> for Point {
-    fn from(item: Vec2) -> Self {
-        Self {
-            x: item.x as i32,
-            y: item.y as i32,
-        }
-    }
-}
-
-/*
-impl From<Vec2i> for Point {
-    fn from(item: Vec2i) -> Self {
-        Self {
-            x: item.x,
-            y: item.y,
-        }
-    }
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////////////////
 /// Overloads: We support basic point math
@@ -221,6 +193,7 @@ impl ops::Mul<i32> for Point {
 }
 
 /// Support multiplying a point by an f32
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 impl ops::Mul<f32> for Point {
     type Output = Point;
     fn mul(mut self, rhs: f32) -> Point {
@@ -251,6 +224,7 @@ impl ops::Div<i32> for Point {
 }
 
 /// Support dividing a point by an f32
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 impl ops::Div<f32> for Point {
     type Output = Point;
     fn div(mut self, rhs: f32) -> Point {

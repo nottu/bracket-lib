@@ -26,6 +26,7 @@ impl bevy::ecs::component::Component for Point3 {
 
 impl Point3 {
     /// Create a new point from an x/y/z coordinate.
+    #[allow(clippy::missing_panics_doc)]
     pub fn new<T>(x: T, y: T, z: T) -> Self
     where
         T: TryInto<i32>,
@@ -36,36 +37,32 @@ impl Point3 {
             z: z.try_into().ok().unwrap(),
         }
     }
-
-    /// Create a point from an x/y/z tuple
-    #[must_use]
-    pub fn from_tuple(t: (i32, i32, i32)) -> Self {
-        Self {
-            x: t.0,
-            y: t.1,
-            z: t.2,
-        }
-    }
-
-    /// Converts into an UltraViolet Vec3
-    pub fn to_vec3(&self) -> Vec3 {
-        Vec3::new(self.x as f32, self.y as f32, self.z as f32)
-    }
-
-    /*
-    /// Converts into an UltraViolet Vec3
-    pub fn to_vec3i(&self) -> Vec3i {
-        Vec3i::new(self.x, self.y, self.z)
-    }
-    */
 }
 
+#[allow(clippy::cast_possible_truncation)]
 impl From<Vec3> for Point3 {
     fn from(item: Vec3) -> Self {
         Self {
             x: item.x as i32,
             y: item.y as i32,
             z: item.z as i32,
+        }
+    }
+}
+
+#[allow(clippy::cast_precision_loss)]
+impl From<Point3> for Vec3 {
+    fn from(point: Point3) -> Self {
+        Self::new(point.x as f32, point.y as f32, point.z as f32)
+    }
+}
+
+impl From<(i32, i32, i32)> for Point3 {
+    fn from(t: (i32, i32, i32)) -> Self {
+        Self {
+            x: t.0,
+            y: t.1,
+            z: t.2,
         }
     }
 }
@@ -152,6 +149,7 @@ impl ops::Mul<i32> for Point3 {
 }
 
 /// Support multiplying a point by an f32
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 impl ops::Mul<f32> for Point3 {
     type Output = Point3;
     fn mul(mut self, rhs: f32) -> Point3 {
@@ -185,6 +183,7 @@ impl ops::Div<i32> for Point3 {
 }
 
 /// Support dividing a point by an f32
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 impl ops::Div<f32> for Point3 {
     type Output = Point3;
     fn div(mut self, rhs: f32) -> Point3 {

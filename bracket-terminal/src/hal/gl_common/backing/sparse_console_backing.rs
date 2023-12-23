@@ -61,7 +61,7 @@ impl SparseConsoleBackend {
         offset_y: f32,
         scale: f32,
         scale_center: (i32, i32),
-        tiles: &Vec<SparseTile>,
+        tiles: &[SparseTile],
         font_scaler: FontScaler,
         needs_resize: bool,
     ) {
@@ -153,7 +153,7 @@ impl SparseConsoleBackend {
         }
 
         self.vao.upload_buffers();
-        self.previous_console = Some(tiles.clone());
+        self.previous_console = Some(Vec::from(tiles));
     }
 
     pub fn gl_draw(&mut self, font: &Font, shader: &Shader) -> BResult<()> {

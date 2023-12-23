@@ -3,7 +3,7 @@ use crate::{
     fonts::FontStore,
     FontCharType, TerminalScalingMode,
 };
-use bevy::{sprite::Mesh2dHandle, utils::HashMap, prelude::Resource};
+use bevy::{prelude::Resource, sprite::Mesh2dHandle, utils::HashMap};
 use bracket_color::prelude::RGBA;
 use bracket_geometry::prelude::{Point, Rect};
 use parking_lot::Mutex;
@@ -443,19 +443,19 @@ impl BracketContext {
                     self.set(pos.x, pos.y, color.fg, color.bg, *glyph)
                 }
                 DrawCommand::SetBackground { pos, bg } => self.set_bg(pos.x, pos.y, *bg),
-                DrawCommand::Print { pos, text } => self.print(pos.x, pos.y, &text),
+                DrawCommand::Print { pos, text } => self.print(pos.x, pos.y, text),
                 DrawCommand::PrintColor { pos, text, color } => {
-                    self.print_color(pos.x, pos.y, &text, color.fg, color.bg)
+                    self.print_color(pos.x, pos.y, text, color.fg, color.bg)
                 }
-                DrawCommand::PrintCentered { y, text } => self.print_centered(*y, &text),
+                DrawCommand::PrintCentered { y, text } => self.print_centered(*y, text),
                 DrawCommand::PrintColorCentered { y, text, color } => {
-                    self.print_color_centered(*y, color.fg, color.bg, &text)
+                    self.print_color_centered(*y, color.fg, color.bg, text)
                 }
                 DrawCommand::PrintCenteredAt { pos, text } => {
-                    self.print_centered_at(pos.x, pos.y, &text)
+                    self.print_centered_at(pos.x, pos.y, text)
                 }
                 DrawCommand::PrintColorCenteredAt { pos, text, color } => {
-                    self.print_color_centered_at(pos.x, pos.y, color.fg, color.bg, &text)
+                    self.print_color_centered_at(pos.x, pos.y, color.fg, color.bg, text)
                 }
                 DrawCommand::PrintRight { pos, text } => self.print_right(pos.x, pos.y, text),
                 DrawCommand::PrintColorRight { pos, text, color } => {

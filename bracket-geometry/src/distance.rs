@@ -3,6 +3,7 @@ use std::cmp::{max, min};
 
 /// Enumeration of available 2D Distance algorithms
 #[derive(Clone, Copy)]
+#[allow(clippy::module_name_repetitions)]
 pub enum DistanceAlg {
     /// Use the Pythagoras algorithm for determining distance - sqrt(A^2 + B^2)
     Pythagoras,
@@ -18,6 +19,7 @@ pub enum DistanceAlg {
 
 impl DistanceAlg {
     /// Provides a 2D distance between points, using the specified algorithm.
+    #[must_use]
     pub fn distance2d(self, start: Point, end: Point) -> f32 {
         match self {
             DistanceAlg::Pythagoras => distance2d_pythagoras(start, end),
@@ -28,18 +30,19 @@ impl DistanceAlg {
         }
     }
     /// Provides a 3D distance between points, using the specified algorithm.
+    #[must_use]
     pub fn distance3d(self, start: Point3, end: Point3) -> f32 {
         match self {
-            DistanceAlg::Pythagoras => distance3d_pythagoras(start, end),
+            DistanceAlg::Pythagoras | DistanceAlg::Chebyshev => distance3d_pythagoras(start, end),
             DistanceAlg::PythagorasSquared => distance3d_pythagoras_squared(start, end),
             DistanceAlg::Manhattan => distance3d_manhattan(start, end),
-            DistanceAlg::Chebyshev => distance3d_pythagoras(start, end),
             DistanceAlg::Diagonal => distance3d_diagonal(start, end),
         }
     }
 }
 
 /// Calculates a Pythagoras distance between two points, and skips the square root for speed.
+#[allow(clippy::cast_precision_loss)]
 fn distance2d_pythagoras_squared(start: Point, end: Point) -> f32 {
     let dx = (max(start.x, end.x) - min(start.x, end.x)) as f32;
     let dy = (max(start.y, end.y) - min(start.y, end.y)) as f32;
@@ -47,6 +50,7 @@ fn distance2d_pythagoras_squared(start: Point, end: Point) -> f32 {
 }
 
 /// Calculates a Manhattan distance between two points
+#[allow(clippy::cast_precision_loss)]
 fn distance2d_manhattan(start: Point, end: Point) -> f32 {
     let dx = (max(start.x, end.x) - min(start.x, end.x)) as f32;
     let dy = (max(start.y, end.y) - min(start.y, end.y)) as f32;
@@ -54,6 +58,7 @@ fn distance2d_manhattan(start: Point, end: Point) -> f32 {
 }
 
 /// Calculates a Manhattan distance between two 3D points
+#[allow(clippy::cast_precision_loss)]
 fn distance3d_manhattan(start: Point3, end: Point3) -> f32 {
     let dx = (max(start.x, end.x) - min(start.x, end.x)) as f32;
     let dy = (max(start.y, end.y) - min(start.y, end.y)) as f32;
@@ -62,7 +67,8 @@ fn distance3d_manhattan(start: Point3, end: Point3) -> f32 {
 }
 
 /// Calculates a Chebyshev distance between two points
-/// See: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
+/// See: <http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html/>
+#[allow(clippy::cast_precision_loss)]
 fn distance2d_chebyshev(start: Point, end: Point) -> f32 {
     let dx = (max(start.x, end.x) - min(start.x, end.x)) as f32;
     let dy = (max(start.y, end.y) - min(start.y, end.y)) as f32;
@@ -74,6 +80,7 @@ fn distance2d_chebyshev(start: Point, end: Point) -> f32 {
 }
 
 /// Calculates a Pythagoras distance between two 3D points.
+#[allow(clippy::cast_precision_loss)]
 fn distance3d_pythagoras_squared(start: Point3, end: Point3) -> f32 {
     let dx = (max(start.x, end.x) - min(start.x, end.x)) as f32;
     let dy = (max(start.y, end.y) - min(start.y, end.y)) as f32;
@@ -94,10 +101,12 @@ fn distance3d_pythagoras(start: Point3, end: Point3) -> f32 {
 }
 
 // Calculates a diagonal distance
+#[allow(clippy::cast_precision_loss)]
 fn distance2d_diagonal(start: Point, end: Point) -> f32 {
     i32::max((start.x - end.x).abs(), (start.y - end.y).abs()) as f32
 }
 
+#[allow(clippy::cast_precision_loss)]
 fn distance3d_diagonal(start: Point3, end: Point3) -> f32 {
     i32::max(
         (start.x - end.x).abs(),

@@ -13,8 +13,8 @@ pub struct SimpleConsoleBackend {
 
 impl SimpleConsoleBackend {
     pub fn new(width: usize, height: usize, gl: &glow::Context) -> SimpleConsoleBackend {
-        let vertex_capacity: usize = (13 * width as usize * height as usize) * 4;
-        let index_capacity: usize = 6 * width as usize * height as usize;
+        let vertex_capacity: usize = (13 * width * height) * 4;
+        let index_capacity: usize = 6 * width * height;
         let vao = SimpleConsoleBackend::init_gl_for_console(gl, vertex_capacity, index_capacity);
         let mut result = SimpleConsoleBackend {
             vao,
@@ -80,7 +80,7 @@ impl SimpleConsoleBackend {
         &mut self,
         height: u32,
         width: u32,
-        tiles: &Vec<Tile>,
+        tiles: &[Tile],
         offset_x: f32,
         offset_y: f32,
         scale: f32,
@@ -190,7 +190,7 @@ impl SimpleConsoleBackend {
         }
 
         self.vao.upload_buffers();
-        self.previous_console = Some(tiles.clone());
+        self.previous_console = Some(Vec::from(tiles));
     }
 
     pub fn gl_draw(&mut self, font: &Font, shader: &Shader) -> BResult<()> {

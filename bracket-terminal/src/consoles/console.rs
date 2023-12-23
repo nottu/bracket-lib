@@ -1,7 +1,7 @@
 use crate::prelude::{FontCharType, XpLayer};
 use bracket_color::prelude::RGBA;
 use bracket_geometry::prelude::{Point, Rect};
-use std::any::Any;
+use std::{any::Any, fmt::Debug};
 
 /// The internal storage type for tiles in a simple console.
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -25,7 +25,7 @@ pub enum CharacterTranslationMode {
 }
 
 /// Trait that must be implemented by console types.
-pub trait Console {
+pub trait Console: Debug {
     /// Gets the dimensions of the console in characters
     fn get_char_size(&self) -> (u32, u32);
 

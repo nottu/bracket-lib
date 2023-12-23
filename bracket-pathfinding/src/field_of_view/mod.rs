@@ -61,7 +61,7 @@ mod tests {
 
     const TESTMAP_W: usize = 20;
     const TESTMAP_H: usize = 20;
-    const TESTMAP_TILES: usize = (TESTMAP_W * TESTMAP_H) as usize;
+    const TESTMAP_TILES: usize = TESTMAP_W * TESTMAP_H;
     const ALGORITHS: [FieldOfViewAlg; 2] = [
         FieldOfViewAlg::RecursiveShadowcasting,
         FieldOfViewAlg::SymmetricShadowcasting,
@@ -214,11 +214,11 @@ mod tests {
         for _ in 0..TESTMAP_TILES / 5 {
             map.tiles[rng.range(0, TESTMAP_TILES)] = true;
         }
-        map.tiles[c.to_index(TESTMAP_W)] = false;
+        map.tiles[c.try_to_index(TESTMAP_W)] = false;
 
         for point in FieldOfViewAlg::SymmetricShadowcasting.field_of_view_set(c, radius, &map) {
             // Symmetry only holds for transparent tiles
-            if !map.tiles[point.to_index(TESTMAP_W)] {
+            if !map.tiles[point.try_to_index(TESTMAP_W)] {
                 assert!(FieldOfViewAlg::SymmetricShadowcasting
                     .field_of_view_set(point, radius, &map)
                     .contains(&c));
