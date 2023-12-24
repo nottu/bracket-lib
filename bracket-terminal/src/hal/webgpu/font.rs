@@ -8,6 +8,7 @@ use wgpu::{BindGroup, BindGroupLayout, Sampler, TextureView};
 use super::WgpuLink;
 
 /// BTerm's representation of a font or tileset file.
+#[derive(Debug)]
 pub struct Font {
     pub bitmap_file: String,
     pub width: u32,

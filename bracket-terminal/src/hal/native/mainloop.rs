@@ -10,6 +10,7 @@ use std::rc::Rc;
 use std::time::Instant;
 
 const TICK_TYPE: ControlFlow = ControlFlow::Poll;
+const TARGET_FPS_MILLIS: u64 = 33;
 
 fn largest_active_font() -> (u32, u32) {
     let bi = BACKEND_INTERNAL.lock();
@@ -146,7 +147,7 @@ pub fn main_loop<GS: GameState>(mut bterm: BTerm, mut gamestate: GS) -> BResult<
     let my_window_id = wc.window().id();
 
     el.run(move |event, _, control_flow| {
-        let wait_time = BACKEND.lock().frame_sleep_time.unwrap_or(33); // Hoisted to reduce locks
+        let wait_time = BACKEND.lock().frame_sleep_time.unwrap_or(TARGET_FPS_MILLIS); // Hoisted to reduce locks
         *control_flow = TICK_TYPE;
 
         if bterm.quitting {
@@ -194,21 +195,21 @@ pub fn main_loop<GS: GameState>(mut bterm: BTerm, mut gamestate: GS) -> BResult<
 
                 // Wait for an appropriate amount of time
                 let time_since_last_frame = frame_timer.elapsed().as_millis() as u64;
-                if time_since_last_frame < wait_time {
-                    // We're wrapping the spin sleeper in a feature now. If you want to use it,
-                    // enable "low_cpu". Otherwise, it was causing input lag.
-                    let delay = u64::min(33, wait_time - time_since_last_frame);
-                    //println!("Frame time: {}ms, Delay: {}ms", time_since_last_frame, delay);
-                    #[cfg(not(feature = "low_cpu"))]
-                    {
-                        std::thread::sleep(std::time::Duration::from_millis(delay));
-                        //*control_flow = ControlFlow::WaitUntil(Instant::now() + std::time::Duration::from_micros(delay));
-                    }
-                    #[cfg(feature = "low_cpu")]
-                    spin_sleeper.sleep(std::time::Duration::from_millis(delay));
-                } else {
-                    //*control_flow = ControlFlow::WaitUntil(Instant::now() + std::time::Duration::from_millis(1));
+
+                // We're wrapping the spin sleeper in a feature now. If you want to use it,
+                // enable "low_cpu". Otherwise, it was causing input lag.
+                let delay = u64::min(
+                    TARGET_FPS_MILLIS,
+                    wait_time.saturating_sub(time_since_last_frame),
+                );
+                //println!("Frame time: {}ms, Delay: {}ms", time_since_last_frame, delay);
+                #[cfg(not(feature = "low_cpu"))]
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(delay));
+                    //*control_flow = ControlFlow::WaitUntil(Instant::now() + std::time::Duration::from_micros(delay));
                 }
+                #[cfg(feature = "low_cpu")]
+                spin_sleeper.sleep(std::time::Duration::from_millis(delay));
             }
             Event::WindowEvent { event, window_id } => {
                 // Fast return for other windows

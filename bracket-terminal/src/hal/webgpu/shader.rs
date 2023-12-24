@@ -1,6 +1,6 @@
 //! Helper to load a shader from WGSL
 use wgpu::ShaderModule;
-
+#[derive(Debug)]
 pub struct Shader(pub ShaderModule);
 
 impl Shader {

@@ -72,9 +72,6 @@ where
     /// If a previous buffer exists, drop it.
     /// Map the backing store to a new vertex array.
     pub fn build(&mut self, wgpu: &WgpuLink) {
-        if let Some(buf) = &mut self.buffer {
-            std::mem::drop(buf);
-        }
         self.buffer = Some(
             wgpu.device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {

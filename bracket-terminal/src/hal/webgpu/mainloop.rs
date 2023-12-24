@@ -20,6 +20,7 @@ use wgpu::TextureViewDescriptor;
 use winit::{dpi::PhysicalSize, event::*, event_loop::ControlFlow};
 
 const TICK_TYPE: ControlFlow = ControlFlow::Poll;
+const TARGET_FPS_MILLIS: u64 = 8;
 
 struct ResizeEvent {
     physical_size: PhysicalSize<u32>,
@@ -72,7 +73,7 @@ pub fn main_loop<GS: GameState>(mut bterm: BTerm, mut gamestate: GS) -> BResult<
     let my_window_id = window.id();
 
     el.run(move |event, _, control_flow| {
-        let wait_time = BACKEND.lock().frame_sleep_time.unwrap_or(33); // Hoisted to reduce locks
+        let wait_time = BACKEND.lock().frame_sleep_time.unwrap_or(TARGET_FPS_MILLIS); // Hoisted to reduce locks
         *control_flow = TICK_TYPE;
 
         if bterm.quitting {
@@ -119,7 +120,7 @@ pub fn main_loop<GS: GameState>(mut bterm: BTerm, mut gamestate: GS) -> BResult<
                 // Wait for an appropriate amount of time
                 let time_since_last_frame = frame_timer.elapsed().as_millis() as u64;
                 if time_since_last_frame < wait_time {
-                    let delay = u64::min(33, wait_time - time_since_last_frame);
+                    let delay = u64::min(TARGET_FPS_MILLIS, wait_time - time_since_last_frame);
                     #[cfg(feature = "low_cpu")]
                     spin_sleeper.sleep(std::time::Duration::from_millis(delay));
                 }

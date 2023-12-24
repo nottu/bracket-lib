@@ -28,9 +28,6 @@ impl IndexBuffer {
     /// Calls WGPU's "create_buffer_init" path to copy the index buffer
     /// from local memory to GPU memory.
     pub fn build(&mut self, wgpu: &WgpuLink) {
-        if let Some(buf) = &mut self.buffer {
-            std::mem::drop(buf);
-        }
         self.buffer = Some(
             wgpu.device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {

@@ -1,6 +1,6 @@
 use crate::BResult;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Font {
     pub tile_size: (u32, u32),
 }

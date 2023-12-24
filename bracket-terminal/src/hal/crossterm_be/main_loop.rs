@@ -152,7 +152,7 @@ fn reset_terminal() {
     execute!(stdout(), crossterm::cursor::Show).expect("Command fail");
     execute!(stdout(), crossterm::terminal::LeaveAlternateScreen).expect("Command fail");
     execute!(stdout(), crossterm::event::DisableMouseCapture).expect("Command fail");
-    crossterm::terminal::disable_raw_mode();
+    let _ = crossterm::terminal::disable_raw_mode();
 }
 
 #[derive(Clone, PartialEq)]
@@ -173,7 +173,7 @@ impl Default for OutputBuffer {
 }
 
 fn full_redraw() -> BResult<Vec<OutputBuffer>> {
-    let be = BACKEND.lock();
+    let _be = BACKEND.lock();
     let mut bi = BACKEND_INTERNAL.lock();
 
     let (width, height) = crossterm::terminal::size()?;
@@ -195,7 +195,7 @@ fn full_redraw() -> BResult<Vec<OutputBuffer>> {
                     )
                     .expect("Command fail");
                     let mut buf_idx = (st.height as u16 - (y as u16 + 1)) as usize * width as usize;
-                    for x in 0..u32::min(st.width, width as u32) {
+                    for _x in 0..u32::min(st.width, width as u32) {
                         let t = &st.tiles[idx];
                         if t.fg != last_fg {
                             queue!(
@@ -226,6 +226,10 @@ fn full_redraw() -> BResult<Vec<OutputBuffer>> {
                             last_bg = t.bg;
                         }
                         queue!(stdout(), Print(to_char(t.glyph as u8))).expect("Command fail");
+                        if buf_idx > buffer.len() {
+                            eprintln!("Index out of bounds!");
+                            break;
+                        }
                         buffer[buf_idx].glyph = to_char(t.glyph as u8);
                         buffer[buf_idx].fg = t.fg;
                         buffer[buf_idx].bg = t.bg;
@@ -281,7 +285,7 @@ fn full_redraw() -> BResult<Vec<OutputBuffer>> {
 }
 
 fn partial_redraw(buffer: &mut Vec<OutputBuffer>) {
-    let be = BACKEND.lock();
+    let _be = BACKEND.lock();
     let mut bi = BACKEND_INTERNAL.lock();
 
     let (width, height) = crossterm::terminal::size().expect("Failed to get size");
@@ -296,7 +300,7 @@ fn partial_redraw(buffer: &mut Vec<OutputBuffer>) {
                 let mut idx = 0;
                 for y in 0..u32::min(st.height, height as u32) {
                     let mut buf_idx = (st.height as u16 - (y as u16 + 1)) as usize * width as usize;
-                    for x in 0..u32::min(st.width, width as u32) {
+                    for _x in 0..u32::min(st.width, width as u32) {
                         let t = &st.tiles[idx];
                         let new_output = OutputBuffer {
                             glyph: to_char(t.glyph as u8),

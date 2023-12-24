@@ -1,3 +1,4 @@
+#[allow(clippy::wildcard_imports)]
 use crate::named::*;
 use crate::prelude::RGBA;
 use parking_lot::Mutex;
