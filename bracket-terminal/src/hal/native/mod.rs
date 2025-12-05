@@ -3,8 +3,11 @@ pub mod shader_strings;
 use glow::NativeVertexArray;
 pub use init::*;
 mod mainloop;
+#[path = "../dummy/keycodes.rs"]
+mod keycodes;
 use crate::hal::scaler::{default_gutter_size, ScreenScaler};
 use crate::hal::ConsoleBacking;
+pub use keycodes::VirtualKeyCode;
 pub use mainloop::*;
 use parking_lot::Mutex;
 use std::any::Any;
@@ -47,15 +50,17 @@ unsafe impl Send for PlatformGL {}
 unsafe impl Sync for PlatformGL {}
 
 pub struct WrappedContext {
-    pub el: glutin::event_loop::EventLoop<()>,
-    pub wc: glutin::WindowedContext<glutin::PossiblyCurrent>,
+    pub el: winit::event_loop::EventLoop<()>,
+    pub window: winit::window::Window,
+    pub gl_context: glutin::context::PossiblyCurrentContext,
+    pub gl_surface: glutin::surface::Surface<glutin::surface::WindowSurface>,
 }
 
 pub struct InitHints {
     pub vsync: bool,
     pub fullscreen: bool,
-    pub gl_version: glutin::GlRequest,
-    pub gl_profile: glutin::GlProfile,
+    pub gl_version: glutin::context::ContextApi,
+    pub gl_profile: glutin::context::GlProfile,
     pub hardware_acceleration: bool,
     pub srgb: bool,
     pub frame_sleep_time: Option<f32>,
@@ -69,8 +74,11 @@ impl InitHints {
         Self {
             vsync: false,
             fullscreen: false,
-            gl_version: glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)),
-            gl_profile: glutin::GlProfile::Core,
+            gl_version: glutin::context::ContextApi::OpenGl(Some(glutin::context::Version {
+                major: 3,
+                minor: 2,
+            })),
+            gl_profile: glutin::context::GlProfile::Core,
             hardware_acceleration: false,
             srgb: true,
             frame_sleep_time: None,
@@ -86,8 +94,11 @@ impl Default for InitHints {
         Self {
             vsync: false,
             fullscreen: false,
-            gl_version: glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 2)),
-            gl_profile: glutin::GlProfile::Core,
+            gl_version: glutin::context::ContextApi::OpenGl(Some(glutin::context::Version {
+                major: 3,
+                minor: 2,
+            })),
+            gl_profile: glutin::context::GlProfile::Core,
             hardware_acceleration: false,
             srgb: true,
             frame_sleep_time: None,

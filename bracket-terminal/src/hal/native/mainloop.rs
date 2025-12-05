@@ -5,9 +5,16 @@ use crate::prelude::{BEvent, BTerm, GameState, BACKEND_INTERNAL, INPUT};
 use crate::{clear_input_state, BResult};
 use bracket_geometry::prelude::Point;
 use glow::HasContext;
-use glutin::{event::Event, event::MouseButton, event::WindowEvent, event_loop::ControlFlow};
+use glutin::surface::GlSurface;
+use std::num::NonZeroU32;
 use std::rc::Rc;
 use std::time::Instant;
+use winit::{
+    dpi::PhysicalSize,
+    event::{ElementState, Event, MouseButton, WindowEvent},
+    event_loop::ControlFlow,
+    keyboard::{KeyCode, PhysicalKey},
+};
 
 const TICK_TYPE: ControlFlow = ControlFlow::Poll;
 
@@ -29,7 +36,7 @@ fn largest_active_font() -> (u32, u32) {
 
 fn on_resize(
     bterm: &mut BTerm,
-    physical_size: glutin::dpi::PhysicalSize<u32>,
+    physical_size: PhysicalSize<u32>,
     dpi_scale_factor: f64,
     send_event: bool,
 ) -> BResult<()> {
@@ -103,7 +110,7 @@ fn on_resize(
 }
 
 struct ResizeEvent {
-    physical_size: glutin::dpi::PhysicalSize<u32>,
+    physical_size: PhysicalSize<u32>,
     dpi_scale_factor: f64,
     send_event: bool,
 }
@@ -135,114 +142,102 @@ pub fn main_loop<GS: GameState>(mut bterm: BTerm, mut gamestate: GS) -> BResult<
     let unwrap = wrap.unwrap();
 
     let el = unwrap.el;
-    let wc = unwrap.wc;
+    let mut window = unwrap.window;
+    let mut gl_context = unwrap.gl_context;
+    let mut gl_surface = unwrap.gl_surface;
 
     on_resize(
         &mut bterm,
-        wc.window().inner_size(),
-        wc.window().scale_factor(),
+        window.inner_size(),
+        window.scale_factor(),
         true,
     )?; // Additional resize to handle some X11 cases
 
     let mut queued_resize_event: Option<ResizeEvent> = None;
     #[cfg(feature = "low_cpu")]
     let spin_sleeper = spin_sleep::SpinSleeper::default();
-    let my_window_id = wc.window().id();
+    let my_window_id = window.id();
 
-    el.run(move |event, _, control_flow| {
+    el.run(move |event, event_loop| {
+        event_loop.set_control_flow(TICK_TYPE);
         let wait_time = BACKEND.lock().frame_sleep_time.unwrap_or(33); // Hoisted to reduce locks
-        *control_flow = TICK_TYPE;
 
         if bterm.quitting {
-            *control_flow = ControlFlow::Exit;
+            event_loop.exit();
         }
 
-        wc.window().set_cursor_visible(bterm.mouse_visible);
-
-        match &event {
-            Event::RedrawEventsCleared => {
-                let frame_timer = Instant::now();
-                if wc.window().inner_size().width == 0 {
-                    return;
-                }
-
-                let execute_ms = now.elapsed().as_millis() as u64 - prev_ms as u64;
-                if execute_ms >= wait_time {
-                    if queued_resize_event.is_some() {
-                        if let Some(resize) = &queued_resize_event {
-                            wc.resize(resize.physical_size);
-                            on_resize(
-                                &mut bterm,
-                                resize.physical_size,
-                                resize.dpi_scale_factor,
-                                resize.send_event,
-                            )
-                            .unwrap();
-                        }
-                        queued_resize_event = None;
-                    }
-
-                    tock(
-                        &mut bterm,
-                        wc.window().scale_factor() as f32,
-                        &mut gamestate,
-                        &mut frames,
-                        &mut prev_seconds,
-                        &mut prev_ms,
-                        &now,
-                    );
-                    wc.swap_buffers().unwrap();
-                    // Moved from new events, which doesn't make sense
-                    clear_input_state(&mut bterm);
-                }
-
-                // Wait for an appropriate amount of time
-                let time_since_last_frame = frame_timer.elapsed().as_millis() as u64;
-                if time_since_last_frame < wait_time {
-                    // We're wrapping the spin sleeper in a feature now. If you want to use it,
-                    // enable "low_cpu". Otherwise, it was causing input lag.
-                    let delay = u64::min(33, wait_time - time_since_last_frame);
-                    //println!("Frame time: {}ms, Delay: {}ms", time_since_last_frame, delay);
-                    #[cfg(not(feature = "low_cpu"))]
-                    {
-                        std::thread::sleep(std::time::Duration::from_millis(delay));
-                        //*control_flow = ControlFlow::WaitUntil(Instant::now() + std::time::Duration::from_micros(delay));
-                    }
-                    #[cfg(feature = "low_cpu")]
-                    spin_sleeper.sleep(std::time::Duration::from_millis(delay));
-                } else {
-                    //*control_flow = ControlFlow::WaitUntil(Instant::now() + std::time::Duration::from_millis(1));
-                }
+        match event {
+            Event::AboutToWait => {
+                window.set_cursor_visible(bterm.mouse_visible);
+                window.request_redraw();
             }
-            Event::WindowEvent { event, window_id } => {
-                // Fast return for other windows
-                if *window_id != my_window_id {
-                    //println!("Dropped event from other window");
+            Event::WindowEvent { window_id, event } => {
+                if window_id != my_window_id {
                     return;
                 }
 
-                // Handle Window Events
                 match event {
+                    WindowEvent::RedrawRequested => {
+                        let frame_timer = Instant::now();
+                        if window.inner_size().width == 0 {
+                            return;
+                        }
+
+                        let execute_ms = now.elapsed().as_millis() as u64 - prev_ms as u64;
+                        if execute_ms >= wait_time {
+                            if let Some(resize) = &queued_resize_event {
+                                resize_surface(&mut gl_surface, &gl_context, resize.physical_size);
+                                on_resize(
+                                    &mut bterm,
+                                    resize.physical_size,
+                                    resize.dpi_scale_factor,
+                                    resize.send_event,
+                                )
+                                .unwrap();
+                            }
+                            queued_resize_event = None;
+
+                            tock(
+                                &mut bterm,
+                                window.scale_factor() as f32,
+                                &mut gamestate,
+                                &mut frames,
+                                &mut prev_seconds,
+                                &mut prev_ms,
+                                &now,
+                            );
+                            gl_surface.swap_buffers(&gl_context).unwrap();
+                            clear_input_state(&mut bterm);
+                        }
+
+                        let time_since_last_frame = frame_timer.elapsed().as_millis() as u64;
+                        if time_since_last_frame < wait_time {
+                            let delay = u64::min(33, wait_time - time_since_last_frame);
+                            #[cfg(not(feature = "low_cpu"))]
+                            {
+                                std::thread::sleep(std::time::Duration::from_millis(delay));
+                            }
+                            #[cfg(feature = "low_cpu")]
+                            spin_sleeper.sleep(std::time::Duration::from_millis(delay));
+                        }
+                    }
                     WindowEvent::Moved(physical_position) => {
                         bterm.on_event(BEvent::Moved {
                             new_position: Point::new(physical_position.x, physical_position.y),
                         });
 
-                        let scale_factor = wc.window().scale_factor();
-                        let physical_size = wc.window().inner_size();
-                        //wc.resize(physical_size);
-                        //on_resize(&mut bterm, physical_size, scale_factor, true).unwrap();
+                        let scale_factor = window.scale_factor();
+                        let physical_size = window.inner_size();
+                        resize_surface(&mut gl_surface, &gl_context, physical_size);
                         queued_resize_event = Some(ResizeEvent {
                             physical_size,
                             dpi_scale_factor: scale_factor,
                             send_event: true,
                         });
                     }
-                    WindowEvent::Resized(_physical_size) => {
-                        let scale_factor = wc.window().scale_factor();
-                        let physical_size = wc.window().inner_size();
-                        //wc.resize(physical_size);
-                        //on_resize(&mut bterm, physical_size, scale_factor, true).unwrap();
+                    WindowEvent::Resized(physical_size) => {
+                        let scale_factor = window.scale_factor();
+                        resize_surface(&mut gl_surface, &gl_context, physical_size);
                         queued_resize_event = Some(ResizeEvent {
                             physical_size,
                             dpi_scale_factor: scale_factor,
@@ -250,75 +245,217 @@ pub fn main_loop<GS: GameState>(mut bterm: BTerm, mut gamestate: GS) -> BResult<
                         });
                     }
                     WindowEvent::CloseRequested => {
-                        // If not using events, just close. Otherwise, push the event
                         if !INPUT.lock().use_events {
-                            *control_flow = ControlFlow::Exit;
+                            event_loop.exit();
                         } else {
                             bterm.on_event(BEvent::CloseRequested);
                         }
                     }
-                    WindowEvent::ReceivedCharacter(char) => {
-                        bterm.on_event(BEvent::Character { c: *char });
-                    }
                     WindowEvent::Focused(focused) => {
-                        bterm.on_event(BEvent::Focused { focused: *focused });
+                        bterm.on_event(BEvent::Focused { focused });
                     }
                     WindowEvent::CursorMoved { position: pos, .. } => {
                         bterm.on_mouse_position(pos.x, pos.y);
                     }
                     WindowEvent::CursorEntered { .. } => bterm.on_event(BEvent::CursorEntered),
                     WindowEvent::CursorLeft { .. } => bterm.on_event(BEvent::CursorLeft),
-
                     WindowEvent::MouseInput { button, state, .. } => {
                         let button = match button {
                             MouseButton::Left => 0,
                             MouseButton::Right => 1,
                             MouseButton::Middle => 2,
-                            MouseButton::Other(num) => 3 + *num as usize,
+                            MouseButton::Back => 3,
+                            MouseButton::Forward => 4,
+                            MouseButton::Other(num) => 5 + num as usize,
                         };
-                        bterm.on_mouse_button(
-                            button,
-                            *state == glutin::event::ElementState::Pressed,
-                        );
+                        bterm.on_mouse_button(button, state == ElementState::Pressed);
                     }
-
-                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                        let scale_factor = wc.window().scale_factor();
-                        let physical_size = wc.window().inner_size();
-                        wc.resize(physical_size);
+                    WindowEvent::ScaleFactorChanged {
+                        scale_factor,
+                        mut inner_size_writer,
+                        ..
+                    } => {
+                        let physical_size = window.inner_size();
+                        let _ = inner_size_writer.request_inner_size(physical_size);
+                        resize_surface(&mut gl_surface, &gl_context, physical_size);
                         on_resize(&mut bterm, physical_size, scale_factor, false).unwrap();
                         bterm.on_event(BEvent::ScaleFactorChanged {
-                            new_size: Point::new(new_inner_size.width, new_inner_size.height),
+                            new_size: Point::new(physical_size.width, physical_size.height),
                             dpi_scale_factor: scale_factor as f32,
                         })
                     }
-
-                    WindowEvent::KeyboardInput {
-                        input:
-                            glutin::event::KeyboardInput {
-                                virtual_keycode: Some(virtual_keycode),
-                                state,
-                                scancode,
-                                ..
-                            },
-                        ..
-                    } => bterm.on_key(
-                        *virtual_keycode,
-                        *scancode,
-                        *state == glutin::event::ElementState::Pressed,
-                    ),
-
+                    WindowEvent::KeyboardInput { event, .. } => {
+                        if let Some(key) = physical_key_to_virtual_keycode(&event.physical_key) {
+                            bterm.on_key(key, 0, event.state == ElementState::Pressed);
+                        }
+                        if event.state == ElementState::Pressed {
+                            if let Some(text) = event.text.as_ref() {
+                                for ch in text.chars() {
+                                    bterm.on_event(BEvent::Character { c: ch });
+                                }
+                            }
+                        }
+                    }
                     WindowEvent::ModifiersChanged(modifiers) => {
-                        bterm.shift = modifiers.shift();
-                        bterm.alt = modifiers.alt();
-                        bterm.control = modifiers.ctrl();
+                        bterm.shift = modifiers.state().shift_key();
+                        bterm.alt = modifiers.state().alt_key();
+                        bterm.control = modifiers.state().control_key();
                     }
                     _ => {}
                 }
             }
             _ => {}
         }
-    });
+    })?;
+
+    Ok(())
+}
+
+fn resize_surface(
+    surface: &mut glutin::surface::Surface<glutin::surface::WindowSurface>,
+    context: &glutin::context::PossiblyCurrentContext,
+    size: PhysicalSize<u32>,
+) {
+    let width = NonZeroU32::new(size.width.max(1)).unwrap();
+    let height = NonZeroU32::new(size.height.max(1)).unwrap();
+    let _ = surface.resize(context, width, height);
+}
+
+fn physical_key_to_virtual_keycode(key: &PhysicalKey) -> Option<VirtualKeyCode> {
+    match key {
+        PhysicalKey::Code(code) => keycode_to_virtual_keycode(code),
+        PhysicalKey::Unidentified(_) => None,
+    }
+}
+
+fn keycode_to_virtual_keycode(code: &KeyCode) -> Option<VirtualKeyCode> {
+    use VirtualKeyCode::*;
+
+    match code {
+        KeyCode::Backquote => Some(Grave),
+        KeyCode::Backslash => Some(Backslash),
+        KeyCode::BracketLeft => Some(LBracket),
+        KeyCode::BracketRight => Some(RBracket),
+        KeyCode::Comma => Some(Comma),
+        KeyCode::Digit0 => Some(Key0),
+        KeyCode::Digit1 => Some(Key1),
+        KeyCode::Digit2 => Some(Key2),
+        KeyCode::Digit3 => Some(Key3),
+        KeyCode::Digit4 => Some(Key4),
+        KeyCode::Digit5 => Some(Key5),
+        KeyCode::Digit6 => Some(Key6),
+        KeyCode::Digit7 => Some(Key7),
+        KeyCode::Digit8 => Some(Key8),
+        KeyCode::Digit9 => Some(Key9),
+        KeyCode::Equal => Some(Equals),
+        KeyCode::IntlBackslash => Some(Backslash),
+        KeyCode::IntlRo => Some(Backslash),
+        KeyCode::IntlYen => Some(Backslash),
+        KeyCode::KeyA => Some(A),
+        KeyCode::KeyB => Some(B),
+        KeyCode::KeyC => Some(C),
+        KeyCode::KeyD => Some(D),
+        KeyCode::KeyE => Some(E),
+        KeyCode::KeyF => Some(F),
+        KeyCode::KeyG => Some(G),
+        KeyCode::KeyH => Some(H),
+        KeyCode::KeyI => Some(I),
+        KeyCode::KeyJ => Some(J),
+        KeyCode::KeyK => Some(K),
+        KeyCode::KeyL => Some(L),
+        KeyCode::KeyM => Some(M),
+        KeyCode::KeyN => Some(N),
+        KeyCode::KeyO => Some(O),
+        KeyCode::KeyP => Some(P),
+        KeyCode::KeyQ => Some(Q),
+        KeyCode::KeyR => Some(R),
+        KeyCode::KeyS => Some(S),
+        KeyCode::KeyT => Some(T),
+        KeyCode::KeyU => Some(U),
+        KeyCode::KeyV => Some(V),
+        KeyCode::KeyW => Some(W),
+        KeyCode::KeyX => Some(X),
+        KeyCode::KeyY => Some(Y),
+        KeyCode::KeyZ => Some(Z),
+        KeyCode::Minus => Some(Minus),
+        KeyCode::Period => Some(Period),
+        KeyCode::Quote => Some(Apostrophe),
+        KeyCode::Semicolon => Some(Semicolon),
+        KeyCode::Slash => Some(Slash),
+        KeyCode::AltLeft => Some(LAlt),
+        KeyCode::AltRight => Some(RAlt),
+        KeyCode::Backspace => Some(Back),
+        KeyCode::CapsLock => Some(Capital),
+        KeyCode::ContextMenu => Some(Apps),
+        KeyCode::ControlLeft => Some(LControl),
+        KeyCode::ControlRight => Some(RControl),
+        KeyCode::Enter => Some(Return),
+        KeyCode::SuperLeft => Some(LWin),
+        KeyCode::SuperRight => Some(RWin),
+        KeyCode::ShiftLeft => Some(LShift),
+        KeyCode::ShiftRight => Some(RShift),
+        KeyCode::Space => Some(Space),
+        KeyCode::Tab => Some(Tab),
+        KeyCode::ArrowDown => Some(Down),
+        KeyCode::ArrowLeft => Some(Left),
+        KeyCode::ArrowRight => Some(Right),
+        KeyCode::ArrowUp => Some(Up),
+        KeyCode::Escape => Some(Escape),
+        KeyCode::End => Some(End),
+        KeyCode::Home => Some(Home),
+        KeyCode::Insert => Some(Insert),
+        KeyCode::Delete => Some(Delete),
+        KeyCode::PageDown => Some(PageDown),
+        KeyCode::PageUp => Some(PageUp),
+        KeyCode::PrintScreen => Some(Snapshot),
+        KeyCode::ScrollLock => Some(Scroll),
+        KeyCode::Pause => Some(Pause),
+        KeyCode::F1 => Some(F1),
+        KeyCode::F2 => Some(F2),
+        KeyCode::F3 => Some(F3),
+        KeyCode::F4 => Some(F4),
+        KeyCode::F5 => Some(F5),
+        KeyCode::F6 => Some(F6),
+        KeyCode::F7 => Some(F7),
+        KeyCode::F8 => Some(F8),
+        KeyCode::F9 => Some(F9),
+        KeyCode::F10 => Some(F10),
+        KeyCode::F11 => Some(F11),
+        KeyCode::F12 => Some(F12),
+        KeyCode::F13 => Some(F13),
+        KeyCode::F14 => Some(F14),
+        KeyCode::F15 => Some(F15),
+        KeyCode::F16 => Some(F16),
+        KeyCode::F17 => Some(F17),
+        KeyCode::F18 => Some(F18),
+        KeyCode::F19 => Some(F19),
+        KeyCode::F20 => Some(F20),
+        KeyCode::F21 => Some(F21),
+        KeyCode::F22 => Some(F22),
+        KeyCode::F23 => Some(F23),
+        KeyCode::F24 => Some(F24),
+        KeyCode::Numpad0 => Some(Numpad0),
+        KeyCode::Numpad1 => Some(Numpad1),
+        KeyCode::Numpad2 => Some(Numpad2),
+        KeyCode::Numpad3 => Some(Numpad3),
+        KeyCode::Numpad4 => Some(Numpad4),
+        KeyCode::Numpad5 => Some(Numpad5),
+        KeyCode::Numpad6 => Some(Numpad6),
+        KeyCode::Numpad7 => Some(Numpad7),
+        KeyCode::Numpad8 => Some(Numpad8),
+        KeyCode::Numpad9 => Some(Numpad9),
+        KeyCode::NumLock => Some(Numlock),
+        KeyCode::NumpadAdd => Some(Add),
+        KeyCode::NumpadBackspace => Some(Back),
+        KeyCode::NumpadComma => Some(NumpadComma),
+        KeyCode::NumpadDecimal => Some(Decimal),
+        KeyCode::NumpadDivide => Some(Divide),
+        KeyCode::NumpadEnter => Some(NumpadEnter),
+        KeyCode::NumpadEqual => Some(NumpadEquals),
+        KeyCode::NumpadMultiply => Some(Multiply),
+        KeyCode::NumpadSubtract => Some(Subtract),
+        _ => None,
+    }
 }
 
 /// Internal handling of the main loop.
