@@ -4,6 +4,7 @@ use std::ops;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Copy, Clone, Default, Debug)]
+#[must_use]
 /// Represents an R/G/B triplet, in the range 0..1 (32-bit float)
 pub struct RGB {
     /// The red component (0..1)
@@ -30,7 +31,6 @@ pub enum HtmlColorConversionError {
 /// Support adding a float to a color. The result is clamped via the constructor.
 impl ops::Add<f32> for RGB {
     type Output = Self;
-    #[must_use]
     fn add(mut self, rhs: f32) -> Self {
         self.r += rhs;
         self.g += rhs;
@@ -42,7 +42,6 @@ impl ops::Add<f32> for RGB {
 /// Support adding an RGB to a color. The result is clamped via the constructor.
 impl ops::Add<RGB> for RGB {
     type Output = Self;
-    #[must_use]
     fn add(mut self, rhs: Self) -> Self {
         self.r += rhs.r;
         self.g += rhs.g;
@@ -54,7 +53,6 @@ impl ops::Add<RGB> for RGB {
 /// Support subtracting a float from a color. The result is clamped via the constructor.
 impl ops::Sub<f32> for RGB {
     type Output = Self;
-    #[must_use]
     fn sub(mut self, rhs: f32) -> Self {
         self.r -= rhs;
         self.g -= rhs;
@@ -66,7 +64,6 @@ impl ops::Sub<f32> for RGB {
 /// Support subtracting an RGB from a color. The result is clamped via the constructor.
 impl ops::Sub<RGB> for RGB {
     type Output = Self;
-    #[must_use]
     fn sub(mut self, rhs: Self) -> Self {
         self.r -= rhs.r;
         self.g -= rhs.g;
@@ -78,7 +75,6 @@ impl ops::Sub<RGB> for RGB {
 /// Support multiplying a color by a float. The result is clamped via the constructor.
 impl ops::Mul<f32> for RGB {
     type Output = Self;
-    #[must_use]
     fn mul(mut self, rhs: f32) -> Self {
         self.r *= rhs;
         self.g *= rhs;
@@ -90,7 +86,6 @@ impl ops::Mul<f32> for RGB {
 /// Support multiplying a color by another color. The result is clamped via the constructor.
 impl ops::Mul<RGB> for RGB {
     type Output = Self;
-    #[must_use]
     fn mul(mut self, rhs: Self) -> Self {
         self.r *= rhs.r;
         self.g *= rhs.g;
@@ -137,7 +132,6 @@ impl From<RGB> for bevy::prelude::Color {
 
 impl RGB {
     /// Constructs a new, zeroed (black) RGB triplet.
-    #[must_use]
     pub fn new() -> Self {
         Self {
             r: 0.0,
@@ -147,22 +141,21 @@ impl RGB {
     }
 
     /// Constructs a new RGB color, from 3 32-bit floats in the range 0..1
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `r` - the red component (0..1)
     /// * `g` - the green component (0..1)
     /// * `b` - the blue component (0..1)
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bracket_color::prelude::*;
     /// let red = RGB::from_f32(1.0, 0.0, 0.0);
     /// let green = RGB::from_f32(0.0, 1.0, 0.0);
     /// ```
     #[inline]
-    #[must_use]
     pub fn from_f32(r: f32, g: f32, b: f32) -> Self {
         let r_clamped = f32::min(1.0, f32::max(0.0, r));
         let g_clamped = f32::min(1.0, f32::max(0.0, g));
@@ -175,22 +168,21 @@ impl RGB {
     }
 
     /// Constructs a new RGB color, from 3 bytes in the range 0..255
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `r` - the red component, ranged from 0 to 255
     /// * `g` - the green component, ranged from 0 to 255
     /// * `b` - the blue component, ranged from 0 to 255
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bracket_color::prelude::*;
     /// let red = RGB::from_u8(255, 0, 0);
     /// let green = RGB::from_u8(0, 255, 0);
     /// ```
     #[inline]
-    #[must_use]
     pub fn from_u8(r: u8, g: u8, b: u8) -> Self {
         Self {
             r: f32::from(r) / 255.0,
@@ -200,32 +192,31 @@ impl RGB {
     }
 
     /// Construct an RGB color from a tuple of u8, or a named constant
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `col` a tuple of three `u8` values. See `from_u8`. These are usually provided from the `named` colors list.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bracket_color::prelude::*;
     /// let red = RGB::named(RED);
     /// let green = RGB::named((0, 255, 0));
     /// ```
     #[inline]
-    #[must_use]
     pub fn named(col: (u8, u8, u8)) -> Self {
         Self::from_u8(col.0, col.1, col.2)
     }
 
     /// Constructs from an HTML color code (e.g. "#eeffee")
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `code` - an HTML color notation (e.g. "#ffeeff")
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bracket_color::prelude::*;
     /// let red = RGB::from_hex("#FF0000");
@@ -233,7 +224,7 @@ impl RGB {
     /// ```
     ///
     /// # Errors
-    /// 
+    ///
     /// See `HtmlColorConversionError`
     #[allow(clippy::cast_precision_loss)]
     pub fn from_hex<S: AsRef<str>>(code: S) -> Result<Self, HtmlColorConversionError> {
@@ -350,7 +341,6 @@ impl RGB {
 
     /// Applies a quick grayscale conversion to the color
     #[inline]
-    #[must_use]
     pub fn to_greyscale(&self) -> Self {
         let linear = (self.r * 0.2126) + (self.g * 0.7152) + (self.b * 0.0722);
         Self::from_f32(linear, linear, linear)
@@ -358,7 +348,6 @@ impl RGB {
 
     /// Applies a lengthier desaturate (via HSV) to the color
     #[inline]
-    #[must_use]
     pub fn desaturate(&self) -> Self {
         let mut hsv = self.to_hsv();
         hsv.s = 0.0;
@@ -367,7 +356,6 @@ impl RGB {
 
     /// Lerps by a specified percentage (from 0 to 1) between this color and another
     #[inline]
-    #[must_use]
     pub fn lerp(&self, color: Self, percent: f32) -> Self {
         let range = (color.r - self.r, color.g - self.g, color.b - self.b);
         Self {

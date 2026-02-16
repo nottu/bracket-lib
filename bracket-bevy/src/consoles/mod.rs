@@ -108,6 +108,7 @@ pub(crate) trait ConsoleFrontEnd: Sync + Send {
     );
 
     /// Sets ALL tiles foreground alpha (only tiles that exist, in sparse consoles).
+    #[allow(unused)]
     fn set_all_fg_alpha(&mut self, alpha: f32);
 
     /// Sets ALL tiles background alpha (only tiles that exist, in sparse consoles).
@@ -127,6 +128,7 @@ pub(crate) trait ConsoleFrontEnd: Sync + Send {
 
     fn get_mouse_position_for_current_layer(&self) -> Point;
     fn set_mouse_position(&mut self, position: (f32, f32), scaler: &ScreenScaler);
+    #[allow(unused)]
     fn get_font_index(&self) -> usize;
 }
 
