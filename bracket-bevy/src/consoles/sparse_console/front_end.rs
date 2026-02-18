@@ -162,20 +162,16 @@ impl ConsoleFrontEnd for SparseConsole {
     }
 
     fn print_centered(&mut self, y: i32, text: &str) {
-        self.print(
-            (self.width as i32 / 2) - (text.to_string().len() as i32 / 2),
-            y,
-            text,
-        );
+        self.print((self.width as i32 / 2) - (text.len() as i32 / 2), y, text);
     }
 
     fn print_centered_at(&mut self, x: i32, y: i32, text: &str) {
-        self.print(x - (text.to_string().len() as i32 / 2), y, text);
+        self.print(x - (text.len() as i32 / 2), y, text);
     }
 
     fn print_color_centered(&mut self, y: i32, fg: RGBA, bg: RGBA, text: &str) {
         self.print_color(
-            (self.width as i32 / 2) - (text.to_string().len() as i32 / 2),
+            (self.width as i32 / 2) - (text.len() as i32 / 2),
             y,
             text,
             fg,
@@ -184,7 +180,7 @@ impl ConsoleFrontEnd for SparseConsole {
     }
 
     fn print_color_centered_at(&mut self, x: i32, y: i32, fg: RGBA, bg: RGBA, text: &str) {
-        self.print_color(x - (text.to_string().len() as i32 / 2), y, text, fg, bg);
+        self.print_color(x - (text.len() as i32 / 2), y, text, fg, bg);
     }
 
     fn print_right(&mut self, x: i32, y: i32, text: &str) {

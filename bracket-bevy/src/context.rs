@@ -52,23 +52,20 @@ impl BracketContext {
     /// Retrieve the largest natural pixel size from all layers.
     /// This is useful when scaling.
     pub fn get_pixel_size(&self) -> (f32, f32) {
-        let mut pixel_size = (0.0, 0.0);
-        self.terminals.lock().iter().for_each(|t| {
+        self.terminals.lock().iter().fold((0.0, 0.0), |acc, t| {
             let ts = t.get_pixel_size();
-            pixel_size.0 = f32::max(pixel_size.0, ts.0);
-            pixel_size.1 = f32::max(pixel_size.1, ts.1);
-        });
-        pixel_size
+            (f32::max(acc.0, ts.0), f32::max(acc.1, ts.1))
+        })
     }
 
     /// Retrieve the pixel size of the largest active font, across all layers.
     pub fn largest_font(&self) -> (f32, f32) {
-        let mut result = (1.0, 1.0);
-        self.fonts.iter().for_each(|fs| {
-            result.0 = f32::max(result.0, fs.font_height_pixels.0);
-            result.1 = f32::max(result.1, fs.font_height_pixels.1);
-        });
-        result
+        self.fonts.iter().fold((1.0, 1.0), |acc, fs| {
+            (
+                f32::max(acc.0, fs.font_height_pixels.0),
+                f32::max(acc.1, fs.font_height_pixels.1),
+            )
+        })
     }
 
     /// Retrieve the index of a character in the backing array at x/y.
@@ -429,99 +426,106 @@ impl BracketContext {
         self.command_buffers.lock().push((z_order, batch));
     }
 
+    fn apply_command(&self, cmd: &DrawCommand) {
+        match cmd {
+            DrawCommand::ClearScreen => self.cls(),
+            DrawCommand::ClearToColor { color } => self.cls_bg(*color),
+            DrawCommand::SetTarget { console } => self.set_active_console(*console),
+            DrawCommand::Set { pos, color, glyph } => {
+                self.set(pos.x, pos.y, color.fg, color.bg, *glyph)
+            }
+            DrawCommand::SetBackground { pos, bg } => self.set_bg(pos.x, pos.y, *bg),
+            DrawCommand::Print { pos, text } => self.print(pos.x, pos.y, &text),
+            DrawCommand::PrintColor { pos, text, color } => {
+                self.print_color(pos.x, pos.y, &text, color.fg, color.bg)
+            }
+            DrawCommand::PrintCentered { y, text } => self.print_centered(*y, &text),
+            DrawCommand::PrintColorCentered { y, text, color } => {
+                self.print_color_centered(*y, color.fg, color.bg, &text)
+            }
+            DrawCommand::PrintCenteredAt { pos, text } => {
+                self.print_centered_at(pos.x, pos.y, &text)
+            }
+            DrawCommand::PrintColorCenteredAt { pos, text, color } => {
+                self.print_color_centered_at(pos.x, pos.y, color.fg, color.bg, &text)
+            }
+            DrawCommand::PrintRight { pos, text } => self.print_right(pos.x, pos.y, text),
+            DrawCommand::PrintColorRight { pos, text, color } => {
+                self.print_color_right(pos.x, pos.y, color.fg, color.bg, text)
+            }
+            DrawCommand::Printer {
+                pos,
+                text,
+                align,
+                background,
+            } => self.printer(pos.x, pos.y, text, *align, *background),
+            DrawCommand::Box { pos, color } => self.draw_box(
+                pos.x1,
+                pos.y1,
+                pos.width(),
+                pos.height(),
+                color.fg,
+                color.bg,
+            ),
+            DrawCommand::HollowBox { pos, color } => self.draw_hollow_box(
+                pos.x1,
+                pos.y1,
+                pos.width(),
+                pos.height(),
+                color.fg,
+                color.bg,
+            ),
+            DrawCommand::DoubleBox { pos, color } => self.draw_box_double(
+                pos.x1,
+                pos.y1,
+                pos.width(),
+                pos.height(),
+                color.fg,
+                color.bg,
+            ),
+            DrawCommand::HollowDoubleBox { pos, color } => self.draw_hollow_box_double(
+                pos.x1,
+                pos.y1,
+                pos.width(),
+                pos.height(),
+                color.fg,
+                color.bg,
+            ),
+            DrawCommand::FillRegion { pos, color, glyph } => {
+                self.fill_region::<RGBA>(*pos, *glyph, color.fg, color.bg)
+            }
+            DrawCommand::BarHorizontal {
+                pos,
+                width,
+                n,
+                max,
+                color,
+            } => self.draw_bar_horizontal(pos.x, pos.y, *width, *n, *max, color.fg, color.bg),
+            DrawCommand::BarVertical {
+                pos,
+                height,
+                n,
+                max,
+                color,
+            } => self.draw_bar_vertical(pos.x, pos.y, *height, *n, *max, color.fg, color.bg),
+            DrawCommand::SetClipping { clip } => self.set_clipping(*clip),
+            DrawCommand::SetFgAlpha { alpha } => self.set_all_fg_alpha(*alpha),
+            DrawCommand::SetBgAlpha { alpha } => self.set_all_bg_alpha(*alpha),
+            DrawCommand::SetAllAlpha { fg, bg } => self.set_all_alpha(*fg, *bg),
+        }
+    }
+
     /// Submit all draw batches for rendering.
-    pub fn render_all_batches(&mut self) {
+    pub fn render_all_batches(&self) {
         let mut batches = self.command_buffers.lock();
         batches.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 
-        batches.iter().for_each(|(_, batch)| {
-            batch.batch.iter().for_each(|(_, cmd)| match cmd {
-                DrawCommand::ClearScreen => self.cls(),
-                DrawCommand::ClearToColor { color } => self.cls_bg(*color),
-                DrawCommand::SetTarget { console } => self.set_active_console(*console),
-                DrawCommand::Set { pos, color, glyph } => {
-                    self.set(pos.x, pos.y, color.fg, color.bg, *glyph)
-                }
-                DrawCommand::SetBackground { pos, bg } => self.set_bg(pos.x, pos.y, *bg),
-                DrawCommand::Print { pos, text } => self.print(pos.x, pos.y, &text),
-                DrawCommand::PrintColor { pos, text, color } => {
-                    self.print_color(pos.x, pos.y, &text, color.fg, color.bg)
-                }
-                DrawCommand::PrintCentered { y, text } => self.print_centered(*y, &text),
-                DrawCommand::PrintColorCentered { y, text, color } => {
-                    self.print_color_centered(*y, color.fg, color.bg, &text)
-                }
-                DrawCommand::PrintCenteredAt { pos, text } => {
-                    self.print_centered_at(pos.x, pos.y, &text)
-                }
-                DrawCommand::PrintColorCenteredAt { pos, text, color } => {
-                    self.print_color_centered_at(pos.x, pos.y, color.fg, color.bg, &text)
-                }
-                DrawCommand::PrintRight { pos, text } => self.print_right(pos.x, pos.y, text),
-                DrawCommand::PrintColorRight { pos, text, color } => {
-                    self.print_color_right(pos.x, pos.y, color.fg, color.bg, text)
-                }
-                DrawCommand::Printer {
-                    pos,
-                    text,
-                    align,
-                    background,
-                } => self.printer(pos.x, pos.y, text, *align, *background),
-                DrawCommand::Box { pos, color } => self.draw_box(
-                    pos.x1,
-                    pos.y1,
-                    pos.width(),
-                    pos.height(),
-                    color.fg,
-                    color.bg,
-                ),
-                DrawCommand::HollowBox { pos, color } => self.draw_hollow_box(
-                    pos.x1,
-                    pos.y1,
-                    pos.width(),
-                    pos.height(),
-                    color.fg,
-                    color.bg,
-                ),
-                DrawCommand::DoubleBox { pos, color } => self.draw_box_double(
-                    pos.x1,
-                    pos.y1,
-                    pos.width(),
-                    pos.height(),
-                    color.fg,
-                    color.bg,
-                ),
-                DrawCommand::HollowDoubleBox { pos, color } => self.draw_hollow_box_double(
-                    pos.x1,
-                    pos.y1,
-                    pos.width(),
-                    pos.height(),
-                    color.fg,
-                    color.bg,
-                ),
-                DrawCommand::FillRegion { pos, color, glyph } => {
-                    self.fill_region::<RGBA>(*pos, *glyph, color.fg, color.bg)
-                }
-                DrawCommand::BarHorizontal {
-                    pos,
-                    width,
-                    n,
-                    max,
-                    color,
-                } => self.draw_bar_horizontal(pos.x, pos.y, *width, *n, *max, color.fg, color.bg),
-                DrawCommand::BarVertical {
-                    pos,
-                    height,
-                    n,
-                    max,
-                    color,
-                } => self.draw_bar_vertical(pos.x, pos.y, *height, *n, *max, color.fg, color.bg),
-                DrawCommand::SetClipping { clip } => self.set_clipping(*clip),
-                DrawCommand::SetFgAlpha { alpha } => self.set_all_fg_alpha(*alpha),
-                DrawCommand::SetBgAlpha { alpha } => self.set_all_fg_alpha(*alpha),
-                DrawCommand::SetAllAlpha { fg, bg } => self.set_all_alpha(*fg, *bg),
-            })
-        });
+        for cmd in batches
+            .iter()
+            .flat_map(|b| b.1.batch.iter().map(|cmd| &cmd.1))
+        {
+            self.apply_command(cmd);
+        }
 
         batches.clear();
     }

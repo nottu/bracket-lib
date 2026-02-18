@@ -47,7 +47,7 @@ impl TextBlock {
         }
     }
 
-    pub fn fg<COLOR>(&mut self, fg: RGB)
+    pub fn fg<COLOR>(&mut self, fg: COLOR)
     where
         COLOR: Into<RGBA>,
     {
