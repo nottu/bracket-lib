@@ -4,16 +4,15 @@ use bracket_bevy::prelude::*;
 fn main() {
     let bterm = BTermBuilder::simple_80x50()
         .with_named_color("blue", BLUE)
-        .with_named_color("pink", Color::PINK);
+        .with_named_color("pink", Color::srgb(1.0, 0.08, 0.58));
 
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(bterm)
+        .add_plugins((DefaultPlugins, bterm))
         .insert_resource(State {
             y: 0,
             going_down: true,
         })
-        .add_system(tick)
+        .add_systems(Update, tick)
         .run();
 }
 

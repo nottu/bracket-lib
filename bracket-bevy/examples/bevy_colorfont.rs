@@ -7,9 +7,8 @@ fn main() {
         .with_simple_console(0, 80, 25);
 
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(bracket)
-        .add_system(tick)
+        .add_plugins((DefaultPlugins, bracket))
+        .add_systems(Update, tick)
         .run();
 }
 

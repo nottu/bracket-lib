@@ -5,9 +5,8 @@ fn main() {
     let bterm = BTermBuilder::simple_80x50().with_random_number_generator(true);
 
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(bterm)
-        .add_system(tick)
+        .add_plugins((DefaultPlugins, bterm))
+        .add_systems(Update, tick)
         .run();
 }
 

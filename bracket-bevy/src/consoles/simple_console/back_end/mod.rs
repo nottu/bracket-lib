@@ -3,10 +3,7 @@ mod simple_with_background;
 use crate::consoles::ScreenScaler;
 
 use super::SimpleConsole;
-use bevy::{
-    prelude::{Assets, Commands, Handle, Mesh},
-    sprite::ColorMaterial,
-};
+use bevy::prelude::{Assets, ColorMaterial, Commands, Handle, Mesh};
 pub(crate) use simple_no_background::*;
 pub(crate) use simple_with_background::*;
 

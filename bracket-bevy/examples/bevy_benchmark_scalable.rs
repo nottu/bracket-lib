@@ -7,9 +7,8 @@ fn main() {
         .with_scaling_mode(TerminalScalingMode::ResizeTerminals);
 
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(bterm)
-        .add_system(tick)
+        .add_plugins((DefaultPlugins, bterm))
+        .add_systems(Update, tick)
         .run();
 }
 

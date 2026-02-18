@@ -8,9 +8,8 @@ fn main() {
         .with_background(false);
 
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(bterm)
-        .add_system(tick)
+        .add_plugins((DefaultPlugins, bterm))
+        .add_systems(Update, tick)
         .run();
 }
 
@@ -166,7 +165,7 @@ Our booked passenger showed in a moment that it was his name. The guard, the coa
 
 “Well! And hallo you!” said Jerry, more hoarsely than before.
 
-0414m 
+0414m
 Original
 “Come on at a footpace! d'ye mind me? And if you've got holsters to that saddle o' yourn, don't let me see your hand go nigh 'em. For I'm a devil at a quick mistake, and when I make one it takes the form of Lead. So now let's look at you.”
 

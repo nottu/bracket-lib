@@ -7,8 +7,8 @@ use crate::{
     BracketContext, FontCharType, SparseConsoleFeatures,
 };
 use bevy::{
+    prelude::ColorMaterial,
     prelude::{Assets, Commands, Handle, Mesh},
-    sprite::ColorMaterial,
 };
 use bracket_color::prelude::RGBA;
 use bracket_geometry::prelude::Point;

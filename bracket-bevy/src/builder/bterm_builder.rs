@@ -7,8 +7,8 @@ use crate::{
 };
 use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
-    prelude::{CoreStage, Plugin, SystemStage, Resource},
-    utils::HashMap,
+    platform::collections::HashMap,
+    prelude::{Plugin, PostUpdate, Resource, Startup, Update},
 };
 use bracket_color::prelude::RGBA;
 use std::collections::HashSet;
@@ -176,37 +176,26 @@ impl BTermBuilder {
 
 impl Plugin for BTermBuilder {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.insert_resource(bevy::prelude::Msaa { samples: 1 });
+        // Msaa is now a per-camera component in Bevy 0.18, not a global resource
         if self.with_diagnostics {
-            app.add_plugin(FrameTimeDiagnosticsPlugin);
+            app.add_plugins(FrameTimeDiagnosticsPlugin::default());
         }
         if self.log_diagnostics {
-            app.add_plugin(LogDiagnosticsPlugin::default());
+            app.add_plugins(LogDiagnosticsPlugin::default());
         }
         app.insert_resource(self.clone());
         app.insert_resource(ScreenScaler::new(self.gutter));
-        app.add_startup_system(load_terminals);
+        app.add_systems(Startup, load_terminals);
         if self.with_diagnostics {
-            app.add_stage_before(
-                CoreStage::Update,
-                "bracket_term_diagnostics",
-                SystemStage::single_threaded(),
-            );
-            app.add_system(update_timing);
-            app.add_system(update_mouse_position);
+            app.add_systems(Update, (update_timing, update_mouse_position));
         }
-        app.add_stage_after(
-            CoreStage::Update,
-            "bracket_term_update",
-            SystemStage::single_threaded(),
-        );
         if self.auto_apply_batches {
-            app.add_system(apply_all_batches);
+            app.add_systems(PostUpdate, apply_all_batches);
         }
-        app.add_system(update_consoles);
-        app.add_system(replace_meshes);
-        app.add_system(window_resize);
-        app.add_system(fix_images);
+        app.add_systems(
+            PostUpdate,
+            (update_consoles, replace_meshes, window_resize, fix_images),
+        );
         if self.with_random_number_generator {
             app.insert_resource(RandomNumbers::new());
         }

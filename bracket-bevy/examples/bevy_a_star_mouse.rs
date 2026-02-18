@@ -4,10 +4,12 @@ use bracket_pathfinding::prelude::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BTermBuilder::simple_80x50().with_random_number_generator(true))
-        .add_startup_system(setup)
-        .add_system(tick)
+        .add_plugins((
+            DefaultPlugins,
+            BTermBuilder::simple_80x50().with_random_number_generator(true),
+        ))
+        .add_systems(Startup, setup)
+        .add_systems(Update, tick)
         .run();
 }
 
@@ -134,7 +136,7 @@ impl Algorithm2D for State {
     }
 }
 
-fn tick(ctx: Res<BracketContext>, mut state: ResMut<State>, mouse: Res<Input<MouseButton>>) {
+fn tick(ctx: Res<BracketContext>, mut state: ResMut<State>, mouse: Res<ButtonInput<MouseButton>>) {
     // Let's use batched drawing
     let mut draw_batch = ctx.new_draw_batch();
 

@@ -3,10 +3,7 @@ mod sparse_with_background;
 use crate::consoles::ScreenScaler;
 
 use super::SparseConsole;
-use bevy::{
-    prelude::{Assets, Commands, Handle, Mesh},
-    sprite::ColorMaterial,
-};
+use bevy::prelude::{Assets, ColorMaterial, Commands, Handle, Mesh};
 pub(crate) use sparse_no_background::*;
 pub(crate) use sparse_with_background::*;
 
