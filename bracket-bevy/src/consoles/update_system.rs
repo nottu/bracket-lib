@@ -74,7 +74,7 @@ pub(crate) fn update_timing(mut ctx: ResMut<BracketContext>, diagnostics: Res<Di
 }
 
 pub(crate) fn window_resize(
-    mut context: ResMut<BracketContext>,
+    context: ResMut<BracketContext>,
     mut resize_event: MessageReader<WindowResized>,
     mut scaler: ResMut<ScreenScaler>,
 ) {
@@ -87,7 +87,7 @@ pub(crate) fn window_resize(
     }
 }
 
-pub(crate) fn apply_all_batches(mut context: ResMut<BracketContext>) {
+pub(crate) fn apply_all_batches(context: ResMut<BracketContext>) {
     context.render_all_batches();
 }
 

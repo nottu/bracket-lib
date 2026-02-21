@@ -12,7 +12,7 @@ fn tick(ctx: Res<BracketContext>) {
     let mut draw_batch = ctx.new_draw_batch();
     draw_batch.print_color_with_z(
         Point::new(10, 10),
-        "This is at always on top",
+        &"This is at always on top",
         ColorPair::new(YELLOW, BLUE),
         1000,
     );

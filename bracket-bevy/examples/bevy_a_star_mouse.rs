@@ -179,7 +179,7 @@ fn tick(ctx: Res<BracketContext>, mut state: ResMut<State>, mouse: Res<ButtonInp
         }
         draw_batch.print_color(
             Point::new(x, y),
-            glyph,
+            &glyph,
             ColorPair::new(fg, RGB::from_f32(0., 0., 0.)),
         );
 
@@ -198,7 +198,7 @@ fn tick(ctx: Res<BracketContext>, mut state: ResMut<State>, mouse: Res<ButtonInp
         let mouse_idx = state.point2d_to_index(mouse_pos);
         draw_batch.print_color(
             mouse_pos,
-            "X",
+            &"X",
             ColorPair::new(RGB::from_f32(0.0, 1.0, 1.0), RGB::from_f32(0.0, 1.0, 1.0)),
         );
         if state.map[mouse_idx as usize] != TileType::Wall {
@@ -209,7 +209,7 @@ fn tick(ctx: Res<BracketContext>, mut state: ResMut<State>, mouse: Res<ButtonInp
                     let y = (loc / 80) as i32;
                     draw_batch.print_color(
                         Point::new(x, y),
-                        "*",
+                        &"*",
                         ColorPair::new(RGB::from_f32(1., 0., 0.), RGB::from_f32(0., 0., 0.)),
                     );
                 }
@@ -232,7 +232,7 @@ fn tick(ctx: Res<BracketContext>, mut state: ResMut<State>, mouse: Res<ButtonInp
     let ppos = idx_xy(state.player_position);
     draw_batch.print_color(
         Point::from_tuple(ppos),
-        "@",
+        &"@",
         ColorPair::new(RGB::from_f32(1.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.)),
     );
 

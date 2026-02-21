@@ -16,5 +16,5 @@ pub(crate) trait SparseConsoleBackend: Sync + Send {
     ) -> Handle<Mesh>;
     fn spawn(&self, commands: &mut Commands, material: Handle<ColorMaterial>, idx: usize);
     fn get_pixel_size(&self) -> (f32, f32);
-    fn resize(&mut self, available_size: &(f32, f32)) -> (i32, i32);
+    fn resize(&mut self, available_size: (f32, f32)) -> (i32, i32);
 }

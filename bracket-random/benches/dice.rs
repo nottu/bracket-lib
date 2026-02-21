@@ -41,7 +41,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("roll_str_3d6+12", |b| {
         let mut rng = RandomNumberGenerator::new();
         b.iter(|| {
-            let n = rng.roll_str("3d6+12").unwrap();
+            let n = rng.roll_str(&"3d6+12").unwrap();
             black_box(n);
         })
     });

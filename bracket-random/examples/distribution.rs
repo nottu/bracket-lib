@@ -11,7 +11,7 @@ fn main() {
 
     println!("Rolling 3d6, {} times and counting distribution.", N_ROLLS);
     for _ in 0..N_ROLLS {
-        let d6roll = rng.roll_str("3d6").expect("Parse fail");
+        let d6roll = rng.roll_str(&"3d6").expect("Parse fail");
         rolls[d6roll as usize] += 1;
     }
 

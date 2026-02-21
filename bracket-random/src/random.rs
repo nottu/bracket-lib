@@ -26,7 +26,7 @@ fn get_seed() -> u64 {
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as u64
+            .as_secs()
     }
 }
 
@@ -43,15 +43,17 @@ pub struct RandomNumberGenerator {
 impl RandomNumberGenerator {
     /// Creates a new RNG from a randomly generated seed
     #[allow(clippy::new_without_default)] // XorShiftRng doesn't have a Default, so we don't either
-    pub fn new() -> RandomNumberGenerator {
+    #[must_use]
+    pub fn new() -> Self {
         let rng: XorShiftRng = SeedableRng::seed_from_u64(get_seed());
-        RandomNumberGenerator { rng }
+        Self { rng }
     }
 
     /// Creates a new RNG from a specific seed
-    pub fn seeded(seed: u64) -> RandomNumberGenerator {
+    #[must_use]
+    pub fn seeded(seed: u64) -> Self {
         let rng: XorShiftRng = SeedableRng::seed_from_u64(seed);
-        RandomNumberGenerator { rng }
+        Self { rng }
     }
 
     /// Returns a random value of whatever type you specify
@@ -72,7 +74,7 @@ impl RandomNumberGenerator {
         self.rng.gen_range(min..max)
     }
 
-    /// Rolls dice, using the classic 3d6 type of format: n is the number of dice, die_type is the size of the dice.
+    /// Rolls dice, using the classic 3d6 type of format: n is the number of dice, `die_type` is the size of the dice.
     pub fn roll_dice(&mut self, n: i32, die_type: i32) -> i32 {
         (0..n).map(|_| self.range(1, die_type + 1)).sum()
     }
@@ -82,15 +84,15 @@ impl RandomNumberGenerator {
         self.rng.next_u64()
     }
 
-    /// Rolls dice based on a DiceType struct, including application of the bonus
+    /// Rolls dice based on a `DiceType` struct, including application of the bonus
     #[cfg(feature = "parsing")]
     pub fn roll(&mut self, dice: DiceType) -> i32 {
         self.roll_dice(dice.n_dice, dice.die_type) + dice.bonus
     }
 
-    /// Rolls dice based on passing in a string, such as roll_str("1d12")
+    /// Rolls dice based on passing in a string, such as `roll_str("1d12")`
     #[cfg(feature = "parsing")]
-    pub fn roll_str<S: ToString>(&mut self, dice: S) -> Result<i32, DiceParseError> {
+    pub fn roll_str<S: ToString>(&mut self, dice: &S) -> Result<i32, DiceParseError> {
         match parse_dice_string(&dice.to_string()) {
             Ok(dt) => Ok(self.roll(dt)),
             Err(e) => Err(e),
@@ -127,7 +129,7 @@ impl RandomNumberGenerator {
 
     /// Get underlying RNG implementation for use in traits / algorithms exposed by
     /// other crates (eg. `rand` itself)
-    pub fn get_rng(&mut self) -> &mut XorShiftRng {
+    pub const fn get_rng(&mut self) -> &mut XorShiftRng {
         &mut self.rng
     }
 }
@@ -139,25 +141,25 @@ mod tests {
     #[test]
     fn roll_str_1d6() {
         let mut rng = RandomNumberGenerator::new();
-        assert!(rng.roll_str("1d6").is_ok());
+        assert!(rng.roll_str(&"1d6").is_ok());
     }
 
     #[test]
     fn roll_str_3d6plus1() {
         let mut rng = RandomNumberGenerator::new();
-        assert!(rng.roll_str("3d6+1").is_ok());
+        assert!(rng.roll_str(&"3d6+1").is_ok());
     }
 
     #[test]
     fn roll_str_3d20minus1() {
         let mut rng = RandomNumberGenerator::new();
-        assert!(rng.roll_str("3d20-1").is_ok());
+        assert!(rng.roll_str(&"3d20-1").is_ok());
     }
 
     #[test]
     fn roll_str_error() {
         let mut rng = RandomNumberGenerator::new();
-        assert!(rng.roll_str("blah").is_err());
+        assert!(rng.roll_str(&"blah").is_err());
     }
 
     #[test]

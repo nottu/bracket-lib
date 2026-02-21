@@ -9,7 +9,7 @@ pub struct DrawBatch {
 }
 
 impl DrawBatch {
-    pub(crate) fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             batch: Vec::new(),
             z_count: 0,
@@ -17,7 +17,7 @@ impl DrawBatch {
         }
     }
 
-    fn next_z(&mut self) -> u32 {
+    const fn next_z(&mut self) -> u32 {
         let result = self.z_count;
         self.z_count += 1;
         result
@@ -108,12 +108,12 @@ impl DrawBatch {
         self
     }
 
-    /// Prints formatted text, using the doryen_rs convention. For example:
+    /// Prints formatted text, using the `doryen_rs` convention. For example:
     /// "#[blue]This blue text contains a #[pink]pink#[] word"
     pub fn printer<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         align: TextAlign,
         background: Option<RGBA>,
     ) -> &mut Self {
@@ -130,13 +130,13 @@ impl DrawBatch {
         self
     }
 
-    /// Prints formatted text, using the doryen_rs convention. For example:
+    /// Prints formatted text, using the `doryen_rs` convention. For example:
     /// "#[blue]This blue text contains a #[pink]pink#[] word"
     /// You can specify the render order.
     pub fn printer_with_z<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         align: TextAlign,
         background: Option<RGBA>,
         z: u32,
@@ -155,7 +155,7 @@ impl DrawBatch {
     }
 
     /// Prints text in the default colors at a given location
-    pub fn print<S: ToString>(&mut self, pos: Point, text: S) -> &mut Self {
+    pub fn print<S: ToString>(&mut self, pos: Point, text: &S) -> &mut Self {
         let z = self.next_z();
         self.batch.push((
             z,
@@ -168,7 +168,7 @@ impl DrawBatch {
     }
 
     /// Prints text in the default colors at a given location & render order
-    pub fn print_with_z<S: ToString>(&mut self, pos: Point, text: S, z: u32) -> &mut Self {
+    pub fn print_with_z<S: ToString>(&mut self, pos: Point, text: &S, z: u32) -> &mut Self {
         self.batch.push((
             z,
             DrawCommand::Print {
@@ -181,7 +181,12 @@ impl DrawBatch {
     }
 
     /// Prints text in the default colors at a given location
-    pub fn print_color<S: ToString>(&mut self, pos: Point, text: S, color: ColorPair) -> &mut Self {
+    pub fn print_color<S: ToString>(
+        &mut self,
+        pos: Point,
+        text: &S,
+        color: ColorPair,
+    ) -> &mut Self {
         let z = self.next_z();
         self.batch.push((
             z,
@@ -198,7 +203,7 @@ impl DrawBatch {
     pub fn print_color_with_z<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         color: ColorPair,
         z: u32,
     ) -> &mut Self {
@@ -215,7 +220,7 @@ impl DrawBatch {
     }
 
     /// Prints text, centered to the whole console width, at vertical location y.
-    pub fn print_centered<S: ToString, Y: TryInto<i32>>(&mut self, y: Y, text: S) -> &mut Self {
+    pub fn print_centered<S: ToString, Y: TryInto<i32>>(&mut self, y: Y, text: &S) -> &mut Self {
         let z = self.next_z();
         self.batch.push((
             z,
@@ -231,7 +236,7 @@ impl DrawBatch {
     pub fn print_centered_with_z<S: ToString, Y: TryInto<i32>>(
         &mut self,
         y: Y,
-        text: S,
+        text: &S,
         z: u32,
     ) -> &mut Self {
         self.batch.push((
@@ -249,7 +254,7 @@ impl DrawBatch {
     pub fn print_color_centered<S: ToString, Y: TryInto<i32>>(
         &mut self,
         y: Y,
-        text: S,
+        text: &S,
         color: ColorPair,
     ) -> &mut Self {
         let z = self.next_z();
@@ -268,7 +273,7 @@ impl DrawBatch {
     pub fn print_color_centered_with_z<S: ToString, Y: TryInto<i32>>(
         &mut self,
         y: Y,
-        text: S,
+        text: &S,
         color: ColorPair,
         z: u32,
     ) -> &mut Self {
@@ -285,7 +290,7 @@ impl DrawBatch {
     }
 
     /// Prints text, centered to the whole console width, at vertical location y.
-    pub fn print_centered_at<S: ToString>(&mut self, pos: Point, text: S) -> &mut Self {
+    pub fn print_centered_at<S: ToString>(&mut self, pos: Point, text: &S) -> &mut Self {
         let z = self.next_z();
         self.batch.push((
             z,
@@ -301,7 +306,7 @@ impl DrawBatch {
     pub fn print_centered_at_with_z<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         z: u32,
     ) -> &mut Self {
         self.batch.push((
@@ -319,7 +324,7 @@ impl DrawBatch {
     pub fn print_color_centered_at<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         color: ColorPair,
     ) -> &mut Self {
         let z = self.next_z();
@@ -338,7 +343,7 @@ impl DrawBatch {
     pub fn print_color_centered_at_with_z<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         color: ColorPair,
         z: u32,
     ) -> &mut Self {
@@ -355,7 +360,7 @@ impl DrawBatch {
     }
 
     /// Prints right aligned text
-    pub fn print_right<S: ToString>(&mut self, pos: Point, text: S) -> &mut Self {
+    pub fn print_right<S: ToString>(&mut self, pos: Point, text: &S) -> &mut Self {
         let z = self.next_z();
         self.batch.push((
             z,
@@ -368,7 +373,7 @@ impl DrawBatch {
     }
 
     /// Prints right aligned text with render order
-    pub fn print_right_z<S: ToString>(&mut self, pos: Point, text: S, z: u32) -> &mut Self {
+    pub fn print_right_z<S: ToString>(&mut self, pos: Point, text: &S, z: u32) -> &mut Self {
         self.batch.push((
             z,
             DrawCommand::PrintRight {
@@ -384,7 +389,7 @@ impl DrawBatch {
     pub fn print_color_right<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         color: ColorPair,
     ) -> &mut Self {
         let z = self.next_z();
@@ -403,7 +408,7 @@ impl DrawBatch {
     pub fn print_color_right_with_z<S: ToString>(
         &mut self,
         pos: Point,
-        text: S,
+        text: &S,
         color: ColorPair,
         z: u32,
     ) -> &mut Self {

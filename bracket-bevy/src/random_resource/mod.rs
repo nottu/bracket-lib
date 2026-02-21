@@ -8,12 +8,14 @@ pub struct RandomNumbers {
 }
 
 impl RandomNumbers {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             rng: Mutex::new(RandomNumberGenerator::new()),
         }
     }
 
+    #[must_use]
     pub fn seeded(seed: u64) -> Self {
         Self {
             rng: Mutex::new(RandomNumberGenerator::seeded(seed)),
@@ -39,7 +41,7 @@ impl RandomNumbers {
         self.rng.lock().range(min, max)
     }
 
-    /// Rolls dice, using the classic 3d6 type of format: n is the number of dice, die_type is the size of the dice.
+    /// Rolls dice, using the classic 3d6 type of format: n is the number of dice, `die_type` is the size of the dice.
     pub fn roll_dice(&self, n: i32, die_type: i32) -> i32 {
         self.rng.lock().roll_dice(n, die_type)
     }
@@ -47,18 +49,6 @@ impl RandomNumbers {
     /// Returns the RNG's next unsigned-64 type
     pub fn next_u64(&self) -> u64 {
         self.rng.lock().next_u64()
-    }
-
-    /// Rolls dice based on a DiceType struct, including application of the bonus
-    #[cfg(feature = "parsing")]
-    pub fn roll(&self, dice: DiceType) -> i32 {
-        self.rng.lock().roll_dice(dice)
-    }
-
-    /// Rolls dice based on passing in a string, such as roll_str("1d12")
-    #[cfg(feature = "parsing")]
-    pub fn roll_str<S: ToString>(&self, dice: S) -> Result<i32, DiceParseError> {
-        self.rng.lock().roll_str(dice)
     }
 
     /// Returns a random index into a slice

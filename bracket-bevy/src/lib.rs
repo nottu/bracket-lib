@@ -6,7 +6,7 @@ pub use builder::*;
 mod context;
 pub use context::*;
 mod consoles;
-use consoles::*;
+use consoles::{update_consoles, SimpleConsole};
 mod random_resource;
 pub use consoles::{DrawBatch, VirtualConsole};
 pub use random_resource::*;

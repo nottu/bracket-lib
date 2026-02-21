@@ -121,7 +121,7 @@ impl SparseConsoleBackend for SparseBackendNoBackground {
         self.font_height_pixels
     }
 
-    fn resize(&mut self, available_size: &(f32, f32)) -> (i32, i32) {
+    fn resize(&mut self, available_size: (f32, f32)) -> (i32, i32) {
         self.width = (available_size.0 / self.font_height_pixels.0).floor() as i32;
         self.height = (available_size.1 / self.font_height_pixels.1).floor() as i32;
 

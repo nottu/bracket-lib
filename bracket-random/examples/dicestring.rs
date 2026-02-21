@@ -5,7 +5,7 @@ fn main() {
     let mut total = 0;
     println!("Rolling 3d6, 10 times.");
     for _ in 0..10 {
-        let d6roll = rng.roll_str("3d6").expect("Parse fail");
+        let d6roll = rng.roll_str(&"3d6").expect("Parse fail");
         total += d6roll;
         println!("3d6 Roll: {}", d6roll);
     }

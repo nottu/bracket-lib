@@ -405,10 +405,10 @@ impl BracketContext {
         self.color_palette.get(color)
     }
 
-    pub(crate) fn resize_terminals(&mut self, scaler: &ScreenScaler) {
+    pub(crate) fn resize_terminals(&self, scaler: &ScreenScaler) {
         let available_size = scaler.available_size();
         let mut lock = self.terminals.lock();
-        lock.iter_mut().for_each(|t| t.resize(&available_size));
+        lock.iter_mut().for_each(|t| t.resize(available_size));
     }
 
     /// Create a new draw batch. Note that this is now a context variable,

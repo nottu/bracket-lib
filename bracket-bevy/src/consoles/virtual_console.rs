@@ -13,9 +13,10 @@ pub struct VirtualConsole {
 
 impl VirtualConsole {
     /// Creates a new virtual console of arbitrary dimensions.
+    #[must_use]
     pub fn new(dimensions: Point) -> Self {
         let num_tiles: usize = (dimensions.x * dimensions.y) as usize;
-        let mut console = VirtualConsole {
+        let mut console = Self {
             width: dimensions.x,
             height: dimensions.y,
             terminal: Vec::with_capacity(num_tiles),
@@ -29,6 +30,7 @@ impl VirtualConsole {
 
     /// Creates a new virtual console from a blob of text.
     /// Useful if you want to scroll through manuals!
+    #[must_use]
     pub fn from_text(text: &str, width: usize) -> Self {
         let raw_lines = text.split('\n');
         let mut lines: Vec<String> = Vec::new();
@@ -46,7 +48,7 @@ impl VirtualConsole {
         }
 
         let num_tiles: usize = width * lines.len();
-        let mut console = VirtualConsole {
+        let mut console = Self {
             width: width as i32,
             height: lines.len() as i32,
             terminal: Vec::with_capacity(num_tiles),
@@ -74,30 +76,31 @@ impl VirtualConsole {
         target_layer: usize,
         context: &BracketContext,
     ) {
+        let draws = (dest.y1..dest.y2).flat_map(|y| {
+            let source_y = y + source.y1 - dest.y1;
+            (dest.x1..dest.x2).filter_map(move |x| {
+                let source_x = x + source.x1 - dest.x1;
+                self.try_at(source_x, source_y).and_then(|idx| {
+                    let t = self.terminal[idx];
+                    (t.glyph > 0).then_some((x, y, t))
+                })
+            })
+        });
+
         let mut lock = context.terminals.lock();
         let target = &mut lock[target_layer];
+
         target.set_clipping(Some(dest));
-        for y in dest.y1..dest.y2 {
-            let source_y = y + source.y1 - dest.y1;
-            for x in dest.x1..dest.x2 {
-                let source_x = x + source.x1 - dest.x1;
-                if let Some(idx) = self.try_at(source_x, source_y) {
-                    let t = self.terminal[idx];
-                    if t.glyph > 0 {
-                        target.set(x, y, t.foreground.into(), t.background.into(), t.glyph);
-                    }
-                }
-            }
+        for (x, y, t) in draws {
+            target.set(x, y, t.foreground.into(), t.background.into(), t.glyph);
         }
         target.set_clipping(None);
     }
 
     fn at(&self, x: i32, y: i32) -> usize {
-        if let Ok(pos) = (((self.height as i32 - 1 - y) * self.width as i32) + x).try_into() {
-            pos
-        } else {
-            0
-        }
+        (((self.height - 1 - y) * self.width) + x)
+            .try_into()
+            .unwrap_or(0)
     }
 }
 
@@ -171,7 +174,7 @@ impl ConsoleFrontEnd for VirtualConsole {
     }
 
     fn print_centered(&mut self, y: i32, text: &str) {
-        self.print((self.width as i32 / 2) - (text.len() / 2) as i32, y, text);
+        self.print((self.width / 2) - (text.len() / 2) as i32, y, text);
     }
 
     fn print_centered_at(&mut self, x: i32, y: i32, text: &str) {
@@ -179,13 +182,7 @@ impl ConsoleFrontEnd for VirtualConsole {
     }
 
     fn print_color_centered(&mut self, y: i32, fg: RGBA, bg: RGBA, text: &str) {
-        self.print_color(
-            (self.width as i32 / 2) - (text.len() / 2) as i32,
-            y,
-            text,
-            fg,
-            bg,
-        );
+        self.print_color((self.width / 2) - (text.len() / 2) as i32, y, text, fg, bg);
     }
 
     fn print_color_centered_at(&mut self, x: i32, y: i32, fg: RGBA, bg: RGBA, text: &str) {
@@ -288,7 +285,7 @@ impl ConsoleFrontEnd for VirtualConsole {
         None
     }
 
-    fn resize(&mut self, _available_size: &(f32, f32)) {
+    fn resize(&mut self, _available_size: (f32, f32)) {
         // Does nothing yet
     }
 

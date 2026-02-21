@@ -1,4 +1,4 @@
-use bracket_color::prelude::{ColorPair, RGB, RGBA};
+use bracket_color::prelude::{ColorPair, RGBA};
 use bracket_geometry::prelude::{Point, Rect};
 use std::cmp;
 
@@ -27,8 +27,9 @@ impl std::fmt::Display for OutOfSpace {
 }
 
 impl TextBlock {
-    pub fn new(x: i32, y: i32, width: i32, height: i32) -> TextBlock {
-        TextBlock {
+    #[must_use]
+    pub fn new(x: i32, y: i32, width: i32, height: i32) -> Self {
+        Self {
             x,
             y,
             width,
@@ -61,24 +62,26 @@ impl TextBlock {
         self.bg = bg.into();
     }
 
-    pub fn move_to(&mut self, x: i32, y: i32) {
+    pub const fn move_to(&mut self, x: i32, y: i32) {
         self.cursor = (x, y);
     }
 
+    #[must_use]
     pub fn get_cursor(&self) -> Point {
         Point::from_tuple(self.cursor)
     }
 
+    #[must_use]
     pub fn get_origin(&self) -> Point {
         Point::new(self.x, self.y)
     }
 
-    pub fn set_origin(&mut self, origin: Point) {
+    pub const fn set_origin(&mut self, origin: Point) {
         self.x = origin.x;
         self.y = origin.y;
     }
 
-    fn at(&self, x: i32, y: i32) -> usize {
+    const fn at(&self, x: i32, y: i32) -> usize {
         ((y * self.width) + x) as usize
     }
 
@@ -127,6 +130,8 @@ impl TextBlock {
         }
     }
 
+    /// # Errors
+    /// Returns `OutOfSpace` if the text content exceeds the buffer size.
     pub fn print(&mut self, text: &TextBuilder) -> Result<(), OutOfSpace> {
         for cmd in &text.commands {
             match cmd {
@@ -184,7 +189,7 @@ impl TextBlock {
 
                 CommandType::TextWrapper { block: t } => {
                     for word in t.split(' ') {
-                        let mut chrs = string_to_cp437(&word);
+                        let mut chrs = string_to_cp437(word);
                         chrs.push(32);
                         if self.cursor.0 + chrs.len() as i32 >= self.width {
                             self.cursor.0 = 0;
@@ -228,19 +233,20 @@ pub struct TextBuilder {
 }
 
 impl TextBuilder {
-    pub fn empty() -> TextBuilder {
-        TextBuilder {
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self {
             commands: Vec::new(),
         }
     }
 
     pub fn append(&mut self, text: &str) -> &mut Self {
-        let chrs = string_to_cp437(&text);
+        let chrs = string_to_cp437(text);
         self.commands.push(CommandType::Text { block: chrs });
         self
     }
     pub fn centered(&mut self, text: &str) -> &mut Self {
-        let chrs = string_to_cp437(&text);
+        let chrs = string_to_cp437(text);
         self.commands.push(CommandType::Centered { block: chrs });
         self
     }

@@ -18,7 +18,7 @@ pub use virtual_console::*;
 mod draw_batch;
 pub use draw_batch::*;
 
-pub(crate) trait ConsoleFrontEnd: Sync + Send {
+pub trait ConsoleFrontEnd: Sync + Send {
     fn get_char_size(&self) -> (i32, i32);
     fn get_pixel_size(&self) -> (f32, f32);
     fn at(&self, x: i32, y: i32) -> usize;
@@ -65,12 +65,10 @@ pub(crate) trait ConsoleFrontEnd: Sync + Send {
 
     fn in_bounds(&self, x: i32, y: i32) -> bool {
         let bounds = self.get_char_size();
-        let bounds = (bounds.0 as i32, bounds.1 as i32);
-        if let Some(clip) = self.get_clipping() {
-            clip.point_in_rect(Point::new(x, y)) && x < bounds.0 && y < bounds.1
-        } else {
-            x < bounds.0 && y < bounds.1 && x >= 0 && y >= 0
-        }
+        self.get_clipping()
+            .map_or(x < bounds.0 && y < bounds.1 && x >= 0 && y >= 0, |clip| {
+                clip.point_in_rect(Point::new(x, y)) && x < bounds.0 && y < bounds.1
+            })
     }
 
     fn try_at(&self, x: i32, y: i32) -> Option<usize> {
@@ -124,7 +122,7 @@ pub(crate) trait ConsoleFrontEnd: Sync + Send {
         scaler: &ScreenScaler,
     ) -> Option<Handle<Mesh>>;
 
-    fn resize(&mut self, available_size: &(f32, f32));
+    fn resize(&mut self, available_size: (f32, f32));
 
     fn get_mouse_position_for_current_layer(&self) -> Point;
     fn set_mouse_position(&mut self, position: (f32, f32), scaler: &ScreenScaler);
@@ -132,7 +130,7 @@ pub(crate) trait ConsoleFrontEnd: Sync + Send {
     fn get_font_index(&self) -> usize;
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum TextAlign {
     Left,
     Center,
